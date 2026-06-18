@@ -1,0 +1,211 @@
+# HALT_CONTRACT.yaml — Autonomous Loop Stop Conditions
+# Version: 1.0
+#
+# PURPOSE: Defines the conditions under which the autonomous CTO-Dev loop MUST stop
+# and notify the human owner. Without explicit halt conditions, the loop has no
+# mechanical safety net — it relies entirely on prompt discipline, which degrades
+# over many iterations.
+#
+# USED BY: The orchestrator (sandcastle or equivalent) evaluates these conditions
+# after each iteration. If any condition is TRUE, the loop halts and the human
+# is notified with the halt reason and relevant context.
+#
+# DESIGN PRINCIPLE: Halt conditions are deliberately conservative. A false halt
+# (loop stops when it could have continued) costs minutes. A missed halt (loop
+# continues when it should have stopped) can cost hours of wasted or harmful work.
+
+schema_version: "1.0"
+
+# ─── DEV RETURN CONDITIONS ────────────────────────────────────────────────────
+# Evaluated after each dev return handoff, before CTO review begins.
+
+dev_return_halt:
+
+  - id: HALT-001
+    name: "Dev blocked"
+    condition: "dev_return.outcome == BLOCKED"
+    rationale: >
+      A blocked dev cannot make progress. The blocker likely requires human
+      decision, external access, or architectural change beyond CTO authority.
+    severity: HARD                      # HARD = immediate halt, SOFT = warn + continue once
+    notification: >
+      Dev returned BLOCKED on DC {dc_id}. Blocker: {partial_reason.blocker}.
+      Recommended action: {partial_reason.recommended_next}.
+
+  - id: HALT-002
+    name: "Success criteria failure"
+    condition: "dev_return.success_criteria_check contains status == FAIL"
+    rationale: >
+      A failed success criterion means the DC did not achieve what the brief
+      specified. CTO can attempt to amend, but repeated failure signals a
+      problem the loop cannot self-correct.
+    severity: SOFT
+    notification: >
+      DC {dc_id} has failing success criteria: {failed_criteria}.
+      CTO will attempt review and amendment. If this is the second consecutive
+      failure on the same DC, HALT-006 will trigger.
+
+  - id: HALT-003
+    name: "No tests produced"
+    condition: >
+      dev_return.test_artifacts.tests_added == 0
+      AND dc_type in [feature, fix]
+    rationale: >
+      Tests are a structural requirement (SESSION_HEADER.md). A feature or fix
+      DC without tests has no mechanical verification — the CTO cannot validate
+      correctness, and the reference base does not grow.
+    severity: HARD
+    notification: >
+      DC {dc_id} produced no tests (dc_type: {dc_type}). This violates the
+      testing governance rule. Dev must produce tests in the same DC as code.
+
+  - id: HALT-004
+    name: "Existing unit test suite regression"
+    condition: "test_suite.fail_count > 0 after dev commit"
+    rationale: >
+      The existing test suite is the cumulative reference base. If a DC breaks
+      existing tests, it has introduced a regression that must be resolved before
+      the loop continues.
+    severity: HARD
+    notification: >
+      Unit test suite regression after DC {dc_id}: {fail_count} failures
+      (was 0 before DC). Failed tests: {failed_test_names}.
+
+  - id: HALT-012
+    name: "Integration test regression"
+    condition: "dev_return.test_artifacts.integration_regressions > 0"
+    rationale: >
+      Integration tests verify cross-service contracts, API boundaries, and data
+      flows between components. A DC that passes its own unit tests but breaks
+      integration tests has introduced a seam failure that will compound if the
+      loop continues. Individual DC tests passing does not guarantee the DCs
+      compose correctly.
+    severity: HARD
+    notification: >
+      Integration test regression after DC {dc_id}: {integration_regressions}
+      integration tests newly failing. Command: {integration_test_command}.
+      This DC's unit tests passed but cross-service contracts are broken.
+
+# ─── CTO REVIEW CONDITIONS ───────────────────────────────────────────────────
+# Evaluated during CTO review of a dev return.
+
+cto_review_halt:
+
+  - id: HALT-005
+    name: "Out-of-scope file changes"
+    condition: >
+      dev_return.files_changed contains paths NOT in brief.autonomous_authority.files_in_scope
+    rationale: >
+      Files changed outside the brief's explicit scope indicate either scope
+      creep or an undiscovered dependency. Both require human judgment.
+    severity: SOFT
+    notification: >
+      DC {dc_id} modified files outside brief scope: {out_of_scope_files}.
+      CTO flagged during review. Human should verify these changes are acceptable.
+
+  - id: HALT-006
+    name: "Consecutive amendment limit"
+    condition: "same DC has been amended and re-issued >= 2 times"
+    rationale: >
+      If the same task has been attempted twice with amendments and still fails,
+      the problem is likely in the brief's design, the task's feasibility, or
+      a misunderstanding that the loop cannot self-correct.
+    severity: HARD
+    notification: >
+      DC {dc_id} has been amended {amend_count} times without resolution.
+      The loop is stuck. Human review required: is the task feasible as scoped?
+      Should it be broken down differently?
+
+  - id: HALT-007
+    name: "Schema/migration not in brief"
+    condition: >
+      dev_return.db_state.schema_changes_made is not null
+      AND brief did not include migration in phases
+    rationale: >
+      Unplanned schema changes are high-risk. They affect all downstream
+      consumers and cannot be easily reversed.
+    severity: HARD
+    notification: >
+      DC {dc_id} applied schema changes not specified in the brief:
+      {schema_changes_made}. This is an escalation trigger per AGENT_ROLES.md.
+
+# ─── LOOP-LEVEL CONDITIONS ───────────────────────────────────────────────────
+# Evaluated at the loop orchestration level, not per-DC.
+
+loop_halt:
+
+  - id: HALT-008
+    name: "Scope complete"
+    condition: >
+      All tasks in TASKS.yaml for active scope have status DONE
+      AND all end-state criteria in scope doc are MET
+    rationale: >
+      The loop has completed its objective. Human must approve scope
+      completion and activate the next scope (if any).
+    severity: HARD
+    notification: >
+      All tasks for {active_scope} are DONE and all end-state criteria are MET.
+      Scope completion requires human sign-off. See scope transition checklist.
+
+  - id: HALT-009
+    name: "No eligible tasks"
+    condition: >
+      No tasks in TASKS.yaml have status OPEN with priority P0 or P1
+      AND all remaining tasks are BLOCKED or P2/P3
+    rationale: >
+      The loop should only autonomously execute high-priority, unblocked work.
+      Lower-priority or blocked work requires human judgment about what to
+      prioritise next.
+    severity: HARD
+    notification: >
+      No P0/P1 unblocked tasks remain. Remaining tasks: {remaining_task_summary}.
+      Human should review and either unblock tasks or promote priority.
+
+  - id: HALT-010
+    name: "Escalation trigger fired"
+    condition: >
+      CTO or Dev session encounters any escalation trigger from AGENT_ROLES.md
+      that requires human input
+    rationale: >
+      Escalation triggers exist precisely to catch situations the autonomous
+      loop should not attempt to resolve on its own.
+    severity: HARD
+    notification: >
+      Escalation trigger fired during {role} session on DC {dc_id}:
+      {escalation_description}. See AGENT_ROLES.md escalation triggers.
+
+  - id: HALT-011
+    name: "Maximum iterations reached"
+    condition: "loop_iteration_count >= max_iterations"
+    rationale: >
+      Safety valve. Even a well-functioning loop should pause periodically
+      for human review of accumulated changes. Default: 5 CTO-Dev cycles.
+    severity: HARD
+    default_max_iterations: 5
+    notification: >
+      Loop has completed {loop_iteration_count} CTO-Dev cycles without human
+      review. Pausing for checkpoint. Review accumulated changes before continuing.
+
+# ─── HUMAN RESPONSE OPTIONS ──────────────────────────────────────────────────
+# When the loop halts, the human can:
+
+human_actions:
+  - action: "RESUME"
+    description: >
+      Acknowledge the halt, resolve the issue (if any), and resume the loop
+      from where it stopped. The CTO picks up the next task.
+  - action: "AMEND_AND_RESUME"
+    description: >
+      Modify the failing brief, task, or scope doc, then resume. Use when
+      the halt revealed a brief authorship problem.
+  - action: "SKIP_AND_RESUME"
+    description: >
+      Skip the current task (mark as BLOCKED with reason) and resume with
+      the next eligible task.
+  - action: "STOP"
+    description: >
+      End the autonomous loop entirely. Return to manual CTO-Dev sessions.
+  - action: "EXTEND"
+    description: >
+      Increase max_iterations and resume. Use when the loop is healthy but
+      hit the iteration limit.

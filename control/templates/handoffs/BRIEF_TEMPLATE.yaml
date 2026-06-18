@@ -1,0 +1,161 @@
+# BRIEF TEMPLATE
+# Schema: schemas/brief.schema.yaml v1.0
+# Copy this file, fill all fields, store at: docs/briefs/{DC}_BRIEF_{DATE}.yaml
+
+schema_version: "1.0"
+dc_identifier: DC-XX-XXX
+title: "[Short title]"
+date: YYYY-MM-DD
+workstream: "[WS identifier and name]"
+priority: P1                     # P1 | P2 | P3
+owner: "[name]"
+prerequisite: NONE               # DC identifier or NONE
+risk_level: LOW                  # LOW | MEDIUM | HIGH
+systems_affected: 0
+
+source_refs:
+  - doc: "docs/control/SCOPE-NNN-[NAME].md"
+    section: "[Phase and section reference]"
+    relevance: "[How this scope section governs this task]"
+  # - doc: "docs/control/[CONTRACT].md"
+  #   section: "[section]"
+  #   relevance: "[relevance]"
+
+problem:
+  root_cause: >
+    [Measured, not estimated. One sentence stating root cause.]
+  metrics:
+    - metric: "[metric name]"
+      value: "[value]"
+      source: "[where measured and when]"
+  rationale: >
+    [Prose context — why this matters. Keep to 2–4 sentences.]
+
+context_inline: >
+  [Everything the dev needs to understand current state, prior work, and
+  architectural decisions — INLINED here, not referenced externally.
+  The dev should not need to read other docs to execute this brief.]
+
+autonomous_authority:
+  files_in_scope:
+    - "[repo-relative path — explicit list of files the dev may modify]"
+  may_proceed:
+    - All read-only shell commands (grep, cat, ls, git log, git diff, --help flags)
+    - SELECT queries against local DB
+    - Reading any file in the repository
+    - Running test suites
+    - Writing code within files_in_scope
+    - "[Add task-specific autonomous actions]"
+  must_checkpoint:
+    - Any remote sync or push
+    - Any database write or migration not specified in phases
+    - Any file modification outside files_in_scope
+    - Any action not described in this brief
+    - "[Add task-specific checkpoint triggers]"
+
+phases:
+  - id: 1
+    name: "[Phase name]"
+    task: >
+      [What to do — specific enough to execute without clarification.]
+    output:
+      type: FILE                 # FILE | QUERY_RESULT | MEASUREMENT | DOCUMENT | CODE_CHANGE
+      path: null                 # repo-relative path or null
+      description: "[What the output contains.]"
+    validation_gate: >
+      [How to confirm this phase is correct before next phase starts.]
+
+  - id: 2
+    name: "[Phase name]"
+    task: >
+      [What to do.]
+    output:
+      type: MEASUREMENT
+      path: null
+      description: "[What the output contains.]"
+    validation_gate: >
+      [Confirmation step.]
+
+  - id: 3
+    name: Verification
+    task: >
+      Run verification sequence. Confirm all success criteria are met.
+      Produce self-check results.
+    output:
+      type: MEASUREMENT
+      path: null
+      description: Measurement results confirming success criteria.
+    validation_gate: All success criteria confirmed before marking complete.
+
+do_not:
+  - "[Most plausible wrong action for this specific task]"
+  - "[Second most plausible wrong action]"
+  - Do not apply changes to remote until local validation passes
+  - "[Scope creep this brief is most likely to attract]"
+
+verification:
+  commands:
+    - step: 1
+      command: "[command]"
+      purpose: "[what this confirms]"
+    - step: 2
+      command: "[command]"
+      purpose: "[what this confirms]"
+  expected_outcomes:
+    - "[Measurable expected result 1]"
+    - "[Measurable expected result 2]"
+
+success_criteria:
+  - id: 1
+    description: "[Measurable outcome]"
+    measurable: true
+  - id: 2
+    description: "[Measurable outcome]"
+    measurable: true
+
+# ─── TESTING ──────────────────────────────────────────────────────────────────
+# Tests are MANDATORY for feature and fix DCs (SESSION_HEADER.md governance rule).
+
+testing:
+  requirement: "Tests ship in same DC as code"
+  pattern: tdd                   # tdd | post-implementation | regression-only
+  coverage_gate: null            # minimum coverage % or null
+  test_location: "[where tests go — e.g. tests/]"
+  prior_art: null                # existing test file to follow as pattern
+  expected_test_count: null      # minimum tests the dev should produce
+  integration_test_command: "[PROJECT: command to run integration tests — e.g. pytest tests/integration/]"
+  integration_test_note: >
+    Before returning this DC, run the integration test suite above in addition
+    to the DC's own unit tests. Report results in test_artifacts.integration_test_result.
+    Integration test regression is a halt condition (HALT-012).
+
+self_check:
+  - item: "[Specific check]"
+    verification_method: "[How to confirm — command, query, file diff, etc.]"
+  - item: "Full test suite passes"
+    verification_method: "[project test command] — 0 failures"
+  - item: "Return handoff produced"
+    verification_method: "Confirm file exists at docs/handoffs/ with all fields filled"
+
+change_impact:
+  systems:
+    - name: "[System name]"
+      impact: NOT_AFFECTED       # IMPACTED | INDIRECTLY_AFFECTED | NOT_AFFECTED
+      description: "[What specifically changes, or why not affected.]"
+  regression_risk: >
+    [What existing behaviour might be affected and how to check.]
+
+out_of_scope:
+  - "[Explicit deferred or excluded item]"
+
+output_documents:
+  - description: "[Document description]"
+    path: "[repo-relative path]"
+
+handoff:
+  produces_artifact: true
+  to_role: HUMAN                 # CTO | DEV | PM | REVIEWER | HUMAN
+  tracker_update:
+    file: docs/control/WAVE_TRACKER.md
+    dc_identifier: DC-XX-XXX
+    on_complete: COMPLETE        # COMPLETE | IN_PROGRESS | BLOCKED

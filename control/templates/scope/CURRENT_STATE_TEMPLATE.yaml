@@ -1,0 +1,160 @@
+# current_state.yaml — Machine-Readable Project State
+# [PROJECT: replace with project name]
+#
+# PURPOSE: Backward-looking operational record. DB metrics, completed DCs, scope history.
+# TASKS.yaml is forward-looking (what to do next). This file is backward-looking (what is true now).
+# Both files must be read together for a complete operational picture.
+#
+# UPDATED BY: CTO at session end (Step 8 of CTO_REVIEW_PROCESS.md).
+# Dev sessions do NOT update this file directly — they provide values in
+# control_update_data of the return handoff, and CTO applies them here.
+#
+# FORMAT: YAML for machine parsing. Human narrative lives in SESSION_BOOTSTRAP_CURRENT.md.
+
+schema_version: "1.1"
+project: "[PROJECT: project name]"
+last_updated: "[DATE]"
+updated_by: "[role and session summary — keep to one line per update, prepend newest]"
+
+# ─── SESSION LOAD ORDER ──────────────────────────────────────────────────────
+# Read this file first. Then load docs in order below.
+# "upfront" = always read at session start
+# "role_specific" = read based on your role
+# "on_demand" = read only when the phase requires it
+
+session_load_order:
+  upfront:
+    - path: "control/current_state.yaml"
+      purpose: "Entry point — metrics, active DCs, component status"
+    - path: "control/TASKS.yaml"
+      purpose: "Task register — open tasks only (done archived)"
+    - path: "control/sessions/SESSION_BOOTSTRAP_STABLE.md"
+      purpose: "Architectural invariants (canonical source)"
+    - path: "[PROJECT: control/SCOPE-NNN.md]"
+      purpose: "Active scope — phases, end-state criteria, critical path"
+  role_specific:
+    cto: "[PROJECT: control/governance/CTO_ROLE.md]"
+    pipeline_dev: "[PROJECT: control/governance/PIPELINE_DEV_ROLE.md]"
+    infra_dev: "[PROJECT: control/governance/INFRA_DEV_ROLE.md]"
+    test_dev: "[PROJECT: control/governance/TEST_DEV_ROLE.md]"
+  on_demand:
+    review: "control/templates/HALT_CONTRACT.yaml"
+    brief_writing: "control/templates/HANDOFF_TEMPLATE.yaml"
+    dev_return: "control/templates/RETURN_HANDOFF_TEMPLATE.yaml"
+    session_end_cto: "control/templates/SESSION_END_PROMPT_CTO.md"
+    session_end_dev: "control/templates/SESSION_END_PROMPT.md"
+    governance_rules: "control/sessions/SESSION_HEADER.md"
+    recent_work: "control/sessions/SESSION_BOOTSTRAP_CURRENT.md"
+
+# ─── SCOPE STATUS ──────────────────────────────────────────────────────────────
+
+scopes:
+  active:
+    id: "SCOPE-NNN"
+    name: "[PROJECT: scope name]"
+    status: "ACTIVE"
+    path: "docs/control/SCOPE-NNN-[NAME].md"
+    phase_a_status: "IN PROGRESS"       # NOT STARTED | IN PROGRESS | COMPLETE
+    phase_b_status: "NOT STARTED"
+    phase_c_status: "NOT STARTED"       # or N/A if scope has no Phase C
+    end_state_summary: "[X of Y criteria met]"
+
+  # completed:
+  #   - id: "SCOPE-001"
+  #     name: "[name]"
+  #     status: "COMPLETE"
+  #     completed_date: "[DATE]"
+  #     path: "docs/control/archive/scopes/SCOPE-001-[NAME].md"
+
+# ─── LAST COMPLETED DC ────────────────────────────────────────────────────────
+# Join point with TASKS.yaml — must match meta.last_closed_dc
+
+last_completed_dc:
+  id: null                              # e.g. "DC-T125" — updated when CTO approves a return
+  title: null
+  date: null
+  outcome: null                         # COMPLETE | PARTIAL | BLOCKED
+
+# ─── ACTIVE DEV DC ─────────────────────────────────────────────────────────────
+# What dev is currently working on (or null if no active brief)
+
+active_dev_dc:
+  id: null                              # DC-ID of brief issued to dev, or null
+  title: null
+  brief_path: null                      # path to HANDOFF_CTO_DEV_*.yaml
+  status: null                          # ISSUED | IN_PROGRESS | RETURNED | null
+
+# ─── DATABASE STATE ────────────────────────────────────────────────────────────
+# [PROJECT: adapt these sections to your project's data stores.
+#  Include whatever metrics CTO needs to verify system health at session start.]
+
+db:
+  # Layer 1 — [PROJECT: primary store name and purpose]
+  layer_1:
+    name: "[PROJECT: db name]"
+    migration_count: null               # exact integer
+    # key_counts:
+    #   - table: "[table name]"
+    #     count: 0
+    #     as_of: "[DATE]"
+
+  # Layer 2 — [PROJECT: secondary store name and purpose, if applicable]
+  layer_2:
+    name: "[PROJECT: db name]"
+    schema_version: null                # e.g. "v22"
+    migration_count: null
+    # key_counts:
+    #   - table: "[table name]"
+    #     count: 0
+    #     as_of: "[DATE]"
+
+  remote_sync:
+    status: "N/A"                       # SYNCED | PENDING | N/A
+    last_synced: null
+    notes: null
+
+# ─── TEST SUITE STATE ─────────────────────────────────────────────────────────
+
+tests:
+  total_count: null                     # total tests in suite
+  pass_count: null
+  fail_count: null
+  skip_count: null
+  coverage_percent: null                # if coverage tracking is enabled
+  last_run_date: null
+  last_run_dc: null                     # which DC last ran the full suite
+
+# ─── DEPLOYMENT STATE ──────────────────────────────────────────────────────────
+# [PROJECT: adapt to your deployment infrastructure]
+
+deployment:
+  # frontend:
+  #   provider: "[Vercel / Netlify / other]"
+  #   auto_deploy: true
+  #   last_deploy_date: null
+  #   last_deploy_commit: null
+  #   production_url: null
+
+  # backend:
+  #   provider: "[Render / Railway / other]"
+  #   auto_deploy: false                # if false, CTO must verify deployment after api/ DCs
+  #   last_deploy_date: null
+  #   last_deploy_commit: null
+  #   production_url: null
+
+# ─── OPEN BLOCKERS ─────────────────────────────────────────────────────────────
+
+open_blockers: []
+  # - "[description of blocker — what it blocks and why]"
+
+# ─── SESSION LOG ───────────────────────────────────────────────────────────────
+# Append newest first. One line per session. Keep the last 10–15 entries.
+# Older entries can be trimmed — git history preserves the full record.
+
+session_log:
+  # - date: "[DATE]"
+  #   role: "CTO"
+  #   summary: "[one-line: what was done, what changed]"
+  #   dc_closed: null                   # DC-ID if a DC was closed this session
+  #   tasks_closed: []                  # T-IDs closed this session
+  #   tasks_opened: []                  # T-IDs opened this session

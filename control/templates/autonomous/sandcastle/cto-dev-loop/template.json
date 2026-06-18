@@ -1,0 +1,4 @@
+{
+  "name": "cto-dev-loop",
+  "description": "Alternates CTO and Dev agent roles — CTO reviews returns, selects tasks, and writes briefs; Dev executes briefs with TDD, produces tests and return handoffs. Loop halts on contract violations or scope completion."
+}

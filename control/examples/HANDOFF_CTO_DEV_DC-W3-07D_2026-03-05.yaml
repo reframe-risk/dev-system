@@ -1,0 +1,158 @@
+# ─── ILLUSTRATIVE EXAMPLE ────────────────────────────────────────────────────
+# This is a real CTO-to-dev handoff from the reframe-app project (DC-W3-07d).
+# It is included here to show how the schema is used in practice with real
+# project detail. The domain (compliance pipeline, Turso, BHP/LIT companies)
+# is specific to reframe-app — substitute your project's equivalents.
+# For the blank template, see: templates/HANDOFF_TEMPLATE.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# Schema: schemas/handoff.schema.yaml v1.0
+
+schema_version: "1.0"
+date: 2026-03-05
+from_role: CTO
+to_role: DEV
+dc_identifier: DC-W3-07d
+brief_path: docs/briefs/DC_W3_07d_ENGINEERING_BRIEF.yaml
+session_summary: >
+  Analysed BHP productivity recall regression. Confirmed root cause, reviewed
+  CTO-authored changes from prior session, classified risk, produced this handoff
+  for dev to verify and complete.
+
+decisions:
+  - description: >
+      Do not re-enable productivity category universal default in graph_helpers.py —
+      its removal in DC-W3-01g was correct and must not be reverted.
+    rationale: Reverting would undo LIT precision improvement (89 FPs eliminated).
+    immutable: true
+  - description: >
+      Migration 059 was applied locally only — Turso sync must not happen until
+      local pipeline re-run confirms expected precision/recall.
+    rationale: Remote sync before local validation risks corrupting production state.
+    immutable: true
+  - description: >
+      The virtiofs DB fallback added by prior CTO session should be reviewed and
+      likely removed — it silently downgrades write connections to read-only.
+    rationale: >
+      Fallback was added for a session-specific environment issue, not a
+      production concern. Silent read-only downgrade is a hidden failure mode.
+    immutable: false
+
+artifacts:
+  - name: Engineering Brief
+    path: docs/briefs/DC_W3_07d_ENGINEERING_BRIEF.yaml
+    status: FINAL
+    notes: null
+  - name: Migration 059
+    path: intelligence_core/domains/policy/taxonomy/data/migrations/059_mining_universal_triggers.sql
+    status: APPLIED
+    notes: Applied to local DB only. NOT synced to Turso. Verify with SELECT before syncing.
+
+files_changed:
+  - path: intelligence_core/domains/policy/graph_helpers.py
+    change_type: MODIFIED
+    notes: >
+      Virtiofs fallback added to _get_connection(). DEV must review and likely remove.
+      Risk: silently converts write connections to read-only.
+  - path: intelligence_core/shared/config/db_paths.py
+    change_type: MODIFIED
+    notes: >
+      Same virtiofs fallback added to get_db_connection(). Higher risk than
+      graph_helpers — most widely used DB connection function in codebase.
+  - path: scripts/infrastructure/phase4/filter_hypotheses_by_evidence.py
+    change_type: MODIFIED
+    notes: >
+      5 new trigger handlers added: CHEMICAL_OPERATIONS, MARITIME_OPERATOR,
+      MINING_EXPORTER, MINING_OPERATOR, FACILITY_OPERATOR. Dev must verify all 5
+      match Phase 2 exactly.
+  - path: scripts/adr013/run_phase2_hypotheses.py
+    change_type: MODIFIED
+    notes: >
+      4 new trigger handlers added (MARITIME_OPERATOR, MINING_EXPORTER,
+      MINING_OPERATOR — CHEMICAL_OPERATIONS and FACILITY_OPERATOR already present).
+      Same virtiofs fallback added.
+  - path: intelligence_core/domains/policy/taxonomy/data/migrations/059_mining_universal_triggers.sql
+    change_type: CREATED
+    notes: Sets is_universal=1 for 7 requirement IDs. Applied locally, not remotely.
+
+commands_run:
+  - command: >
+      SELECT requirement_id, is_universal, universal_trigger
+      FROM compliance_requirements WHERE is_universal = 1 ORDER BY requirement_id
+    outcome: Should return 26 rows including 7 new ones from migration 059. Verify count.
+    side_effects: false
+  - command: python3 /tmp/taxonomy_copy_path/apply_migration.py 059
+    outcome: Migration 059 applied to local /tmp copy of taxonomy DB.
+    side_effects: true
+
+current_state:
+  branch: feat/dc-w3-07d-bhp-productivity-recall
+  local_db_status: >
+    Migration 059 applied to local /tmp copy. policy_taxonomy.db in repo NOT updated.
+    Run SELECT COUNT(*) WHERE is_universal=1 — should return 26.
+  remote_sync_status: >
+    GitHub: branch pushed, no PR open yet.
+    Turso: NOT synced. Migration 059 not applied to remote.
+  pipeline_last_run: >
+    BHP: recall collapsed from 81.82% to 54.5% after DC-W3-07a. Productivity = 0
+    hypotheses. This is the regression being fixed.
+  known_issues:
+    - >
+      virtiofs fallback in db_paths.py and graph_helpers.py silently downgrades
+      write connections — review and likely remove before any further pipeline runs
+    - >
+      2 of the 9 BHP FNs (act_australian_dangerous_goods_code, act_criminal_code_ammonium)
+      are not in taxonomy at all — they remain FNs after this fix (separate task)
+    - >
+      Turso token expires 2026-03-10 — renew before any remote sync operations
+
+open_questions:
+  - question: >
+      Should the virtiofs fallback in db_paths.py and graph_helpers.py be removed
+      entirely, or retained with a more explicit error (not silent read-only downgrade)?
+    blocks: >
+      Cannot safely run full pipeline until fallback behaviour is resolved —
+      risk of silent write failures corrupting pipeline output.
+    owner: DEV
+  - question: >
+      Is the Turso token renewed? Expires 2026-03-10.
+    blocks: Remote sync of migration 059 to Turso.
+    owner: HUMAN
+
+do_not:
+  - Re-enable productivity category universal default in graph_helpers.py
+  - Add BHP-specific hardcoding anywhere — all fixes must generalise via trigger logic
+  - Apply new taxonomy migrations without running verification SELECT first
+  - Sync to Turso until local pipeline re-run confirms expected precision/recall
+  - Remove the maritime_safety → sovereignty_defence seed from migration 057
+  - Run full pipeline for companies other than BHP and LIT (spot check only)
+
+autonomous_authority:
+  may_proceed:
+    - All read-only shell commands (grep, cat, ls, git log, git diff, --help flags)
+    - SELECT queries against local taxonomy DB
+    - Reading any file in the repository
+    - Running unit tests for is_trigger_met() function
+    - Running Phase 2 inject step only for LIT (spot check for false positives)
+    - Writing to docs/handoffs/ and docs/changes/
+  must_checkpoint:
+    - Applying migration 059 to Turso (remote sync)
+    - Running full 5-phase pipeline for any company
+    - Modifying shared infrastructure files (db_paths.py, graph_helpers.py)
+    - Committing changes to main branch
+    - Opening a pull request
+
+risk:
+  level: MEDIUM
+  systems_affected: 3
+  rationale: >
+    Phase 2, Phase 4, and taxonomy DB all affected. Changes are targeted but
+    shared infrastructure modifications (db_paths.py) carry cross-system risk.
+
+human_loop:
+  required_before_proceeding: true
+  review_items:
+    - >
+      Confirm virtiofs fallback decision: remove entirely, or replace with explicit
+      error? Dev cannot safely proceed with pipeline runs until this is resolved.
+    - >
+      Confirm Turso token status before any remote sync is attempted.

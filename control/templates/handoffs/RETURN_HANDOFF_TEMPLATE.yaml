@@ -1,0 +1,175 @@
+# RETURN HANDOFF TEMPLATE — Dev to CTO
+# Schema: schemas/handoff.schema.yaml v1.0
+# Copy this file, fill all fields, commit before dev session ends.
+# File naming: docs/handoffs/HANDOFF_DEV_CTO_{DC-ID}_{DATE}.yaml
+#
+# PURPOSE: The dev return handoff is the authoritative record of what was done.
+# The CTO reviews this using CTO_REVIEW_PROCESS.md. Every field must be filled
+# with actual values — no placeholders, no approximations.
+#
+# DO NOT SUBMIT if any field contains: TODO, TBD, [placeholder], or null where
+# a value is required. The CTO will return incomplete handoffs without review.
+
+schema_version: "1.0"
+date: YYYY-MM-DD
+from_role: DEV
+to_role: CTO
+dc_identifier: "DC-SXXX-X-X"        # Must match the brief's dc_identifier exactly
+
+# ─── OUTCOME ──────────────────────────────────────────────────────────────────
+
+outcome: COMPLETE                     # COMPLETE | PARTIAL | BLOCKED
+
+outcome_summary: >
+  [One paragraph. What was built or changed. What state the system is in now.
+  Be specific — cite files, row counts, migration numbers as relevant.
+  Do not write "successfully completed" — write what is now true that was not true before.]
+
+# If outcome is PARTIAL or BLOCKED, fill this section:
+partial_reason: null
+  # what_was_done: "[what completed successfully]"
+  # what_was_not_done: "[what was not attempted or could not be completed]"
+  # blocker: "[exact error, constraint, or missing information that blocked completion]"
+  # recommended_next: "[what the CTO should do next]"
+
+# ─── FILES CHANGED ────────────────────────────────────────────────────────────
+# List every file touched. Include files that were read then modified.
+# Do not include files that were only read. If a file was in brief scope but
+# NOT changed, note it here with change_type: NO_CHANGE and why.
+
+files_changed:
+  - path: "[repo-relative path]"
+    change_type: MODIFIED             # CREATED | MODIFIED | DELETED | NO_CHANGE
+    notes: null                       # explain if non-obvious or if NO_CHANGE
+
+# ─── TEST ARTIFACTS ────────────────────────────────────────────────────────────
+# MANDATORY for feature and fix DCs (SESSION_HEADER.md governance rule).
+# tests_added must be > 0 for feature/fix DCs. The CTO will reject returns
+# without tests, and the autonomous loop will HALT (HALT-003).
+
+test_artifacts:
+  tests_added: 0                      # number of NEW test functions/methods added
+  tests_modified: 0                   # number of EXISTING tests modified
+  test_command: ""                    # exact command to reproduce (e.g. "pytest tests/ -v")
+  test_output_summary: ""            # e.g. "42 passed, 0 failed, 3 skipped"
+  full_suite_result: ""              # full test suite result (e.g. "203 passed, 0 failed")
+  coverage_delta: null               # optional — coverage % change if tracking enabled
+
+  # ── INTEGRATION TESTS ──────────────────────────────────────────────────────
+  # MANDATORY: Run the project's integration test suite before returning.
+  # Integration tests verify cross-service contracts, API boundaries, and data
+  # flows between components. Unit tests passing does not guarantee integration.
+  # The autonomous loop will HALT if integration tests regress (HALT-012).
+  integration_test_command: ""        # exact command (e.g. "pytest tests/integration/ -v")
+  integration_test_result: ""         # e.g. "18 passed, 0 failed"
+  integration_regressions: 0          # number of integration tests that NEWLY fail after this DC
+
+# ─── DB STATE ─────────────────────────────────────────────────────────────────
+# Run the verification queries from the brief's self_check block and from
+# SESSION_END_PROMPT.md. Paste actual output, not summaries.
+# CTO will reject a return that has estimated or placeholder DB state.
+
+db_state:
+  migration_count_local: null         # exact integer from: SELECT COUNT(*) FROM migrations;
+  schema_version: null                # exact value from relevant query
+  remote_sync_status: NOT_DONE        # DONE | NOT_DONE | N/A — was remote DB synced?
+  remote_sync_notes: null             # if DONE: what was synced; if NOT_DONE: why deferred
+
+  # Key counts — paste actual query results for any tables relevant to this DC:
+  key_counts:
+    # - table: "[table name]"
+    #   count: 0
+    #   query: "[SELECT COUNT(*) FROM ...]"
+    #   notes: null
+
+  # Any schema changes, constraint additions, or index changes made this DC:
+  schema_changes_made: null
+    # - "[description of change]"
+
+  # Paste any verification query output from the brief's self_check block:
+  self_check_results:
+    # - query: "[query as run]"
+    #   result: "[exact output]"
+    #   status: PASS                  # PASS | FAIL | UNEXPECTED
+
+# ─── OPEN ITEMS ───────────────────────────────────────────────────────────────
+# Things discovered during this DC that are not yet resolved.
+# Each open item will be reviewed by the CTO and may become a new task in TASKS.yaml.
+# If none: set to empty list.
+
+open_items: []
+  # - id: "OI-001"
+  #   description: "[What was found or left incomplete]"
+  #   severity: LOW                   # LOW | MEDIUM | HIGH | BLOCKING
+  #   recommended_action: "[what should be done]"
+  #   suggested_priority: P2          # P0 | P1 | P2 | P3
+  #   blocks: null                    # what this blocks, if anything
+
+# ─── SUCCESS CRITERIA VERIFICATION ───────────────────────────────────────────
+# For each success criterion in the brief, state whether it was met and cite evidence.
+# Do not leave status as UNKNOWN — if you cannot verify, write why.
+
+success_criteria_check:
+  - criterion_id: "SC-1"
+    description: "[paste criterion from brief]"
+    status: PASS                      # PASS | FAIL | PARTIAL
+    evidence: "[what proves this — query result, file state, test output]"
+
+# ─── DO_NOT COMPLIANCE ────────────────────────────────────────────────────────
+# For each item in the brief's do_not list, confirm it was respected.
+
+do_not_compliance:
+  - constraint: "[paste do_not item from brief]"
+    respected: true                   # true | false
+    notes: null                       # required if false
+
+# ─── CONTROL UPDATE DATA ──────────────────────────────────────────────────────
+# Data the CTO uses to update /control documents (Step 8 of CTO_REVIEW_PROCESS.md).
+# Be precise — the CTO will copy values from here directly into TASKS.yaml
+# and current_state.yaml without re-deriving them.
+
+control_update_data:
+
+  # For current_state.yaml:
+  current_state_updates:
+    last_completed_dc: "DC-SXXX-X-X"      # same as dc_identifier above
+    active_dc_status: COMPLETE              # COMPLETE | PARTIAL | BLOCKED
+    open_blockers: []                       # list strings, or empty list
+
+  # For SESSION_BOOTSTRAP_CURRENT.md (narrative layer):
+  recent_work_entry: >
+    [One or two sentences for the "recent work" section of BOOTSTRAP_CURRENT.
+    Format: DC-ID — what was built/changed and what state the system is in now.]
+
+  # Flag if a new architectural invariant was established this DC
+  # (triggers update to SESSION_BOOTSTRAP_STABLE.md):
+  new_architectural_invariant: false
+  invariant_description: null         # required if new_architectural_invariant: true
+
+# ─── RELATED TASKS ────────────────────────────────────────────────────────────
+# Which TASKS.yaml entries does this DC address?
+# The CTO uses this to close tasks in Step 7a of CTO_REVIEW_PROCESS.md.
+
+related_tasks:
+  closes:
+    - "[T-XXX]"                       # task IDs this DC fully closes
+  partially_addresses:
+    - "[T-XXX]"                       # task IDs this DC makes progress on but does not close
+  unrelated_to: []                    # task IDs in the brief that were NOT addressed (explain in open_items)
+
+# ─── AUTONOMOUS AUTHORITY USED ────────────────────────────────────────────────
+# Brief record of which authority class each significant action fell under.
+# Helps CTO verify nothing was done outside pre-authorized scope.
+
+authority_record:
+  - action: "[what was done]"
+    authority_class: "[from brief's autonomous_authority.may_proceed list]"
+    # or: checkpoint_taken: true — if the action required a checkpoint
+
+# ─── BRANCH AND COMMIT STATE ──────────────────────────────────────────────────
+
+branch: "[current branch name]"
+last_commit: "[commit hash — short form]"
+commit_message: "[commit message]"
+pr_status: null                       # null | OPEN | MERGED | DRAFT — if a PR exists
+pr_url: null                          # GitHub PR URL if applicable

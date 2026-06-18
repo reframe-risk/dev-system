@@ -1,0 +1,155 @@
+# brief.schema.yaml
+# Structured engineering brief for AI dev sessions
+# Version: 2.0 — 2026-05-20 (v2.0: source_refs, context_inline, files_in_scope,
+#   testing section, bug_context added. Aligns with BRIEF_TEMPLATE.yaml v2.0)
+#
+# USAGE:
+#   - Authored by CTO
+#   - Stored at: docs/handoffs/HANDOFF_CTO_DEV_{DC}_{DATE}.yaml
+#   - Read by receiving agent (Dev) at session start
+#   - Brief must be SELF-CONTAINED: inline all context the dev needs
+#   - Prose rationale goes in the 'rationale' field only — all other fields are typed
+#
+# DESIGN PRINCIPLE:
+#   Structured fields = agent-readable, unambiguous, no interpretation required
+#   Inlined context = dev never needs to read external docs to execute
+
+---
+
+# ─── HEADER (all required) ────────────────────────────────────────────────────
+
+schema_version: string          # "2.0"
+dc_identifier: string           # e.g. "DC-T125"
+task_id: string                 # TASKS.yaml task ID (e.g. "T-125")
+title: string                   # short title
+date: date                      # YYYY-MM-DD
+workstream: string              # e.g. "WS-01 — Precision and Verifiability"
+priority: enum                  # P0 | P1 | P2 | P3
+owner: string                   # name
+assigned_role: enum             # CTO | PIPELINE_DEV | INFRA_DEV | VALIDATION_DEV | FRONTEND_DEV
+prerequisite: string            # DC identifier or "NONE"
+risk_level: enum                # LOW | MEDIUM | HIGH
+systems_affected: integer       # count
+
+# ─── SOURCE REFERENCES (required, min 1) ─────────────────────────────────────
+# Links back to scope doc and governing contracts. CTO must re-read these
+# before writing the brief (meta.brief_writing convention in TASKS.yaml).
+
+source_refs:
+  - doc: string                 # repo-relative path to scope doc or contract
+    section: string             # section name within the doc
+    relevance: string           # how this doc governs this task
+
+# ─── PROBLEM (required) ───────────────────────────────────────────────────────
+
+problem:
+  root_cause: string            # measured, not estimated — one sentence
+  metrics:
+    - metric: string
+      value: string
+      source: string
+  rationale: text               # prose — why this matters
+
+# ─── CONTEXT (required) ──────────────────────────────────────────────────────
+# Inlined context — dev should NOT need to read external docs to execute.
+
+context_inline: text            # system state, prior work, architectural decisions
+
+# ─── AUTONOMOUS EXECUTION AUTHORITY (required) ────────────────────────────────
+
+autonomous_authority:
+  files_in_scope:
+    - string                    # repo-relative paths the dev may modify
+  may_proceed:
+    - string                    # action class the agent may take without pausing
+  must_checkpoint:
+    - string                    # action class requiring human confirmation
+
+# ─── PHASES (required, min 1) ────────────────────────────────────────────────
+
+phases:
+  - id: integer
+    name: string
+    task: text                  # specific enough to execute without clarification
+    output:
+      type: enum                # FILE | QUERY_RESULT | MEASUREMENT | DOCUMENT | CODE_CHANGE
+      path: string | null
+      description: string
+    validation_gate: string
+
+# ─── DO NOT (required, min 1) ─────────────────────────────────────────────────
+
+do_not:
+  - string
+
+# ─── OUT OF SCOPE (required, min 1) ───────────────────────────────────────────
+
+out_of_scope:
+  - string
+
+# ─── TESTING (required) ──────────────────────────────────────────────────────
+# Tests are mandatory for feature and fix DCs (SESSION_HEADER.md Rule 0).
+
+testing:
+  requirement: string           # e.g. "Tests ship in same DC as code"
+  pattern: enum                 # tdd | post-implementation | regression-only
+  coverage_gate: integer | null # minimum coverage % or null
+  test_location: string         # where tests go
+  prior_art: string | null      # existing test file to follow as pattern
+  expected_test_count: integer | null  # minimum tests the dev should produce
+
+# ─── VERIFICATION (required) ──────────────────────────────────────────────────
+
+verification:
+  commands:
+    - step: integer
+      command: string
+      purpose: string
+  expected_outcomes:
+    - string
+
+# ─── SUCCESS CRITERIA (required, min 1) ───────────────────────────────────────
+
+success_criteria:
+  - id: integer
+    description: string         # measurable outcome
+    measurable: boolean
+
+# ─── SELF CHECK (required, min 1) ─────────────────────────────────────────────
+
+self_check:
+  - item: string
+    command: string             # exact command to run (v2.0: added)
+    expected: string            # expected output (v2.0: added)
+
+# ─── BUG CONTEXT (optional — for bug fix DCs) ────────────────────────────────
+
+bug_context:
+  symptom: string
+  reproduction: string
+  hypotheses: list<string>
+
+# ─── CHANGE IMPACT (required) ─────────────────────────────────────────────────
+
+change_impact:
+  systems:
+    - name: string
+      impact: enum              # IMPACTED | INDIRECTLY_AFFECTED | NOT_AFFECTED
+      description: string
+  regression_risk: text
+
+# ─── OUTPUT DOCUMENTS (required, min 0) ───────────────────────────────────────
+
+output_documents:
+  - description: string
+    path: string
+
+# ─── HANDOFF (required) ───────────────────────────────────────────────────────
+
+handoff:
+  produces_artifact: boolean
+  to_role: enum | null          # CTO | DEV | PM | REVIEWER | HUMAN
+  tracker_update:
+    file: string                # e.g. "docs/control/TASKS.yaml"
+    dc_identifier: string
+    on_complete: enum           # COMPLETE | IN_PROGRESS | BLOCKED

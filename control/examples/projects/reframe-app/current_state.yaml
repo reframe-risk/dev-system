@@ -1,0 +1,122 @@
+# current_state.yaml — reframe-app
+# Structured replacement for SESSION_BOOTSTRAP_CURRENT volatile layer
+# Schema: project-specific (reframe-app pipeline metrics)
+# Updated: by agent at session end, committed to this file
+# Last updated: 2026-03-05 — initial state captured from SESSION_BOOTSTRAP.md v2.6
+
+schema_version: "1.0"
+project: reframe-app
+last_updated: 2026-03-05
+last_session_summary: >
+  CTO advisory (Cowork): bootstrap split proposal accepted, YAML structured
+  communication format adopted, multi-agent repo created and pushed.
+
+# ─── PIPELINE METRICS ────────────────────────────────────────────────────────
+
+pipeline_metrics:
+  LIT:
+    precision: "81.2%"
+    recall: null                 # not measured this session
+    retain_count: null
+    watch_count: null
+    as_of: 2026-03-04
+  BHP:
+    precision: null              # regression in progress — DC-W3-07d
+    recall: "54.5%"              # collapsed from 81.82% baseline
+    recall_baseline: "81.82%"
+    retain_count: null
+    as_of: 2026-03-02
+  CSL:
+    precision: "12.1%"          # pre-DC-W3-01 baseline
+    recall: "15.2%"
+    retain_count: null
+    as_of: 2026-02-24
+
+# ─── DATABASE STATE ───────────────────────────────────────────────────────────
+
+database:
+  schema_version: "v2.11.0"
+  local_migrations_applied: 59
+  turso_migrations_synced: 58   # migration 059 applied locally, NOT synced
+  turso_token_expiry: 2026-03-10
+  turso_token_status: URGENT    # renew before 2026-03-10
+
+# ─── ACTIVE DELIVERY CANDIDATE ────────────────────────────────────────────────
+
+active_dc:
+  identifier: DC-W3-07d
+  title: BHP Productivity Recall Regression
+  status: IN_PROGRESS
+  workstream: WS-01
+  priority: P1
+  brief_path: docs/briefs/DC_W3_07d_ENGINEERING_BRIEF.yaml   # pending migration to YAML
+  blocked_by: null
+
+# ─── OPEN BLOCKERS ────────────────────────────────────────────────────────────
+
+open_blockers:
+  - id: BLOCKER-001
+    description: >
+      Turso token expires 2026-03-10. Remote sync of migration 059 blocked
+      until token is renewed.
+    resolves_by: 2026-03-08     # renew before expiry
+    owner: HUMAN
+  - id: BLOCKER-002
+    description: >
+      Virtiofs DB fallback in db_paths.py and graph_helpers.py added by prior
+      CTO session — silently downgrades write connections to read-only.
+      Dev must review and decide: remove or replace with explicit error.
+    resolves_by: null
+    owner: DEV
+
+# ─── PENDING STRUCTURAL TASKS ─────────────────────────────────────────────────
+# These are meta-tasks about the /control system itself, not pipeline DCs
+
+structural_tasks:
+  - id: STRUCT-001
+    title: Bootstrap split implementation
+    decision: decisions/001_bootstrap_split.md
+    status: PENDING
+    brief: null                  # brief not yet authored
+  - id: STRUCT-002
+    title: Migrate briefs to YAML schema
+    decision: decisions/002_communication_format.md
+    status: PENDING
+    brief: null
+  - id: STRUCT-003
+    title: First YAML handoff (next CTO session)
+    decision: decisions/002_communication_format.md
+    status: PENDING
+    brief: null
+  - id: STRUCT-004
+    title: GitHub Actions schema validation
+    decision: null               # Decision 003 not yet written
+    status: PENDING
+    brief: null
+
+# ─── WAVE STATUS ──────────────────────────────────────────────────────────────
+
+waves:
+  wave_1: COMPLETE              # 8/8 tasks, 2026-01-31
+  wave_2: COMPLETE              # DC-01, DC-06, backdated
+  wave_3: ACTIVE                # started 2026-02-24
+
+wave_3_workstreams:
+  WS-00: COMPLETE               # Discovery audit and reality map
+  WS-01: ACTIVE                 # Precision and verifiability
+  WS-02: ACTIVE                 # Watch lane
+  WS-03: PENDING                # Frontend
+  WS-04: PENDING                # Multi-company
+
+# ─── GOVERNANCE ───────────────────────────────────────────────────────────────
+
+governance:
+  criticality_5_enforcement: ENFORCING
+  criticality_4_enforcement: SKIPPED
+  phase: 1                      # Phase 2 pending after observation period
+
+# ─── FRONTEND ─────────────────────────────────────────────────────────────────
+
+frontend:
+  status: PENDING               # not yet started
+  notes: null

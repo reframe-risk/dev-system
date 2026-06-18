@@ -1,0 +1,72 @@
+# HANDOFF — CTO to Dev
+# Schema: schemas/handoff.schema.yaml v1.0
+
+schema_version: "1.0"
+date: 2026-04-12
+from_role: CTO
+to_role: DEV
+dc_identifier: CLEANUP-001
+brief_path: null
+session_summary: >
+  Repo cleanup session. All new governance docs created and verified.
+  Three files need deleting: projects/reframe-app/ (archived to examples/),
+  and multi-agent-system.html at repo root (moved to examples/).
+
+decisions:
+  - description: >
+      projects/reframe-app/ is archived — its contents have been copied to
+      examples/projects/reframe-app/ and are no longer live project state.
+    rationale: >
+      The ai-dev-control repo is a portable standard, not a host for live project
+      state. reframe-app project state belongs in the reframe-app repo.
+    immutable: true
+
+artifacts: []
+
+files_changed:
+  - path: examples/projects/reframe-app/README.md
+    change_type: CREATED
+    notes: Copied from projects/reframe-app/README.md with illustrative header added.
+  - path: examples/projects/reframe-app/current_state.yaml
+    change_type: CREATED
+    notes: Copied from projects/reframe-app/current_state.yaml. Illustrative example only.
+
+commands_run: []
+
+current_state:
+  branch: main
+  local_db_status: N/A
+  remote_sync_status: Not yet pushed.
+  pipeline_last_run: null
+  known_issues:
+    - projects/reframe-app/ still exists and needs to be deleted.
+    - multi-agent-system.html at repo root still exists and needs to be deleted (moved to examples/).
+
+open_questions: []
+
+do_not:
+  - Delete examples/projects/reframe-app/ — this is the archive copy, keep it.
+  - Modify any file in /control or /templates — out of scope for this task.
+  - Delete projects/_template/ — this is the blank template, keep it.
+  - Delete projects/README.md — keep it.
+
+autonomous_authority:
+  may_proceed:
+    - Delete projects/reframe-app/ and all contents (README.md, current_state.yaml,
+      HANDOFF_TO_CTO_2026-04-11.md, handoffs/ directory if present, .DS_Store)
+    - Delete multi-agent-system.html at repo root (already copied to examples/)
+    - Commit the deletions
+    - Push to remote
+  must_checkpoint:
+    - Any change outside the two items listed above
+
+risk:
+  level: LOW
+  systems_affected: 0
+  rationale: >
+    Deleting a directory that has already been archived elsewhere.
+    No code, no schemas, no templates affected.
+
+human_loop:
+  required_before_proceeding: false
+  review_items: []

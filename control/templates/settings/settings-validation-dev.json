@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Test/Validation Dev project-level settings. Read-only role — no commits, no migrations, no remote sync. Allows measurement scripts only.",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(python3 scripts/admin/measure_ground_truth.py *)",
+      "Bash(python3 scripts/admin/compare_registers.py *)",
+      "Bash(sqlite3 * SELECT *)",
+      "Bash(sqlite3 * .tables)",
+      "Bash(sqlite3 * .schema)"
+    ],
+    "ask": [],
+    "deny": [
+      "Bash(python3 scripts/admin/apply_migrations.py *)",
+      "Bash(./scripts/admin/sync_turso_schema.sh)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(rm *)",
+      "Bash(turso *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  }
+}

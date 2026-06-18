@@ -1,0 +1,197 @@
+# handoff.schema.yaml
+# Structured handoff artifact for AI-to-AI communication
+# Version: 2.0 — 2026-05-20 (v2.0: source_refs, context, files_in_scope, testing,
+#   test_artifacts, task_id, bug_context added. Aligns with HANDOFF_TEMPLATE.yaml v1.1
+#   and RETURN_HANDOFF_TEMPLATE.yaml v2.0)
+#
+# USAGE:
+#   - CTO briefs: docs/handoffs/HANDOFF_CTO_DEV_{DC}_{DATE}.yaml
+#   - Dev returns: docs/handoffs/HANDOFF_DEV_CTO_{DC}_{DATE}.yaml
+#   - All required fields must be present — missing required fields = invalid handoff
+#   - Briefs must be self-contained: inline context, not external references
+#
+# FIELD TYPES:
+#   string       — plain text, single line
+#   text         — plain text, multi-line allowed
+#   enum         — one of the listed values only
+#   list<string> — array of strings
+#   list<item>   — array of structured objects (see field definition)
+#   boolean      — true or false
+#   date         — YYYY-MM-DD
+#   nullable     — field may be null if not applicable
+#   integer      — whole number
+
+---
+
+# ─── HEADER (all required) ────────────────────────────────────────────────────
+
+schema_version: string          # "2.0"
+date: date                      # YYYY-MM-DD
+from_role: enum                 # CTO | PIPELINE_DEV | INFRA_DEV | VALIDATION_DEV | FRONTEND_DEV | PM | REVIEWER
+to_role: enum                   # CTO | PIPELINE_DEV | INFRA_DEV | VALIDATION_DEV | FRONTEND_DEV | PM | REVIEWER | HUMAN
+dc_identifier: string           # e.g. "DC-T125" — or "NONE" if not DC-specific
+task_id: string                 # TASKS.yaml task ID (e.g. "T-125"), or "NONE"
+session_summary: string         # one sentence — what this session accomplished
+
+# ─── SOURCE REFERENCES (required for CTO briefs, min 1) ─────────────────────
+# Links back to scope doc section and governing contracts.
+
+source_refs:
+  - doc: string                 # repo-relative path to scope doc or contract
+    section: string             # section name within the doc
+    relevance: string           # how this doc governs this task
+
+# ─── CONTEXT (required for CTO briefs) ───────────────────────────────────────
+# Inlined context — dev should NOT need to read external docs to execute.
+
+context:
+  system_state: text            # current DB metrics, schema version, key counts
+  prior_work: text              # what prior DCs built that this task builds on
+  architectural_decisions: text # relevant ADRs and invariants, inlined
+
+# ─── PHASES (required for CTO briefs, min 1) ────────────────────────────────
+
+phases:
+  - id: integer
+    name: string
+    task: text                  # specific enough to execute without clarification
+    output:
+      type: enum                # FILE | QUERY_RESULT | MEASUREMENT | CODE_CHANGE
+      path: string | null
+      description: string
+    validation_gate: string
+
+# ─── DECISIONS (required, min 0 items) ───────────────────────────────────────
+
+decisions:
+  - description: string         # what was decided — one sentence
+    rationale: string           # why — one sentence
+    immutable: boolean          # true = must not be re-opened by receiving agent
+
+# ─── SCOPE BOUNDARIES (required for CTO briefs) ─────────────────────────────
+
+autonomous_authority:
+  files_in_scope:
+    - string                    # repo-relative paths the dev may modify
+  may_proceed:
+    - string                    # action class the receiver may take autonomously
+  must_checkpoint:
+    - string                    # action class requiring human confirmation
+
+do_not:
+  - string                      # one negative constraint per item
+
+out_of_scope:
+  - string                      # explicit item deferred or excluded
+
+# ─── TESTING (required for CTO briefs) ───────────────────────────────────────
+# Tests are mandatory for feature and fix DCs (SESSION_HEADER.md Rule 0).
+
+testing:
+  requirement: string           # e.g. "Tests ship in same DC as code"
+  pattern: enum                 # tdd | post-implementation | regression-only
+  coverage_gate: integer | null # minimum coverage % or null
+  test_location: string         # where tests go (e.g. "tests/")
+  prior_art: string | null      # existing test file to follow as pattern
+  expected_test_count: integer | null  # minimum tests the dev should produce
+
+# ─── SUCCESS CRITERIA (required, min 1) ──────────────────────────────────────
+
+success_criteria:
+  - id: integer
+    description: string         # measurable outcome
+    measurable: boolean
+
+# ─── SELF CHECK (required, min 1) ────────────────────────────────────────────
+
+self_check:
+  - item: string
+    command: string             # exact command to run
+    expected: string            # expected output
+
+# ─── BUG CONTEXT (optional — for bug fix DCs) ────────────────────────────────
+
+bug_context:
+  symptom: string               # what the user sees
+  reproduction: string          # steps or command to reproduce
+  hypotheses: list<string>      # CTO may pre-populate
+
+# ─── FILES CHANGED (required for dev returns, min 0 items) ───────────────────
+
+files_changed:
+  - path: string
+    change_type: enum           # CREATED | MODIFIED | DELETED | NO_CHANGE
+    notes: string | null
+
+# ─── TEST ARTIFACTS (required for dev returns on feature/fix DCs) ────────────
+# tests_added must be > 0 for feature/fix DCs. HALT-003 fires if missing.
+
+test_artifacts:
+  tests_added: integer          # number of NEW test functions added
+  tests_modified: integer       # number of EXISTING tests modified
+  test_command: string          # exact command to reproduce
+  test_output_summary: string   # e.g. "42 passed, 0 failed, 3 skipped"
+  full_suite_result: string     # full test suite result
+  coverage_delta: string | null # coverage % change if tracking enabled
+
+# ─── DB STATE (required for dev returns) ─────────────────────────────────────
+
+db_state:
+  migration_count_local: integer | null
+  schema_version: string | null
+  remote_sync_status: enum      # DONE | NOT_DONE | N/A
+  remote_sync_notes: string | null
+  key_counts:
+    - table: string
+      count: integer
+      query: string
+      notes: string | null
+  schema_changes_made: list<string> | null
+  self_check_results:
+    - query: string
+      result: string
+      status: enum              # PASS | FAIL | UNEXPECTED
+
+# ─── OUTCOME (required for dev returns) ──────────────────────────────────────
+
+outcome: enum                   # COMPLETE | PARTIAL | BLOCKED
+outcome_summary: text
+
+# ─── SUCCESS CRITERIA CHECK (required for dev returns) ───────────────────────
+
+success_criteria_check:
+  - criterion_id: string
+    description: string
+    status: enum                # PASS | FAIL | PARTIAL
+    evidence: string
+
+# ─── CONTROL UPDATE DATA (required for dev returns) ─────────────────────────
+
+control_update_data:
+  current_state_updates:
+    last_completed_dc: string
+    active_dc_status: enum      # COMPLETE | PARTIAL | BLOCKED
+    open_blockers: list<string>
+  recent_work_entry: text
+  new_architectural_invariant: boolean
+  invariant_description: string | null
+
+# ─── RELATED TASKS (required for dev returns) ────────────────────────────────
+
+related_tasks:
+  closes: list<string>          # T-IDs fully closed
+  partially_addresses: list<string>
+  unrelated_to: list<string>
+
+# ─── RISK (required) ─────────────────────────────────────────────────────────
+
+risk:
+  level: enum                   # LOW | MEDIUM | HIGH
+  systems_affected: integer
+  rationale: string
+
+# ─── HUMAN LOOP (required) ───────────────────────────────────────────────────
+
+human_loop:
+  required_before_proceeding: boolean
+  review_items: list<string>

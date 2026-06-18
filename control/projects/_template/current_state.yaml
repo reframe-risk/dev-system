@@ -1,0 +1,64 @@
+# current_state.yaml — [PROJECT NAME]
+# Machine-readable project state
+# Copy of CURRENT_STATE_TEMPLATE.yaml — adapt fields to your project.
+# See templates/CURRENT_STATE_TEMPLATE.yaml for full documentation.
+#
+# UPDATED BY: CTO at session end (Step 8 of CTO_REVIEW_PROCESS.md).
+# Dev sessions do NOT update this file directly.
+
+schema_version: "2.0"
+project: "[PROJECT: project name]"
+last_updated: "[DATE]"
+updated_by: "[role and session summary]"
+
+scopes:
+  active:
+    id: "SCOPE-001"
+    name: "[PROJECT: scope name]"
+    status: "ACTIVE"
+    path: "docs/control/SCOPE-001-[NAME].md"
+    phase_a_status: "NOT STARTED"
+    phase_b_status: "NOT STARTED"
+    phase_c_status: "N/A"
+    end_state_summary: "0 of N criteria met"
+
+last_completed_dc:
+  id: null
+  title: null
+  date: null
+  outcome: null
+
+active_dev_dc:
+  id: null
+  title: null
+  brief_path: null
+  status: null
+
+db:
+  layer_1:
+    name: "[PROJECT: primary store]"
+    migration_count: null
+  layer_2:
+    name: "[PROJECT: secondary store or N/A]"
+    schema_version: null
+    migration_count: null
+  remote_sync:
+    status: "N/A"
+    last_synced: null
+    notes: null
+
+tests:
+  total_count: null
+  pass_count: null
+  fail_count: null
+  skip_count: null
+  coverage_percent: null
+  last_run_date: null
+  last_run_dc: null
+
+deployment: {}
+  # Adapt to your infrastructure — see CURRENT_STATE_TEMPLATE.yaml
+
+open_blockers: []
+
+session_log: []

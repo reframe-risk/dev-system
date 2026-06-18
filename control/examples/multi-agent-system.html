@@ -1,0 +1,601 @@
+<!-- ILLUSTRATIVE EXAMPLE — visual diagram of the multi-agent system architecture.
+     This diagram may not reflect the current state of the standard.
+     Authoritative structure is in control/CONTROL_DIRECTORY.md. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-Agent Control System</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 32px 24px;
+  }
+
+  h1 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 600;
+    color: #f8fafc;
+    letter-spacing: 0.02em;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 40px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .diagram {
+    max-width: 960px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* ── LAYERS ── */
+  .layer {
+    display: flex;
+    align-items: stretch;
+    position: relative;
+  }
+
+  .layer-label {
+    width: 120px;
+    min-width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 16px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #475569;
+  }
+
+  .layer-content {
+    flex: 1;
+    padding: 12px 0;
+  }
+
+  /* ── ARROWS between layers ── */
+  .arrow-row {
+    display: flex;
+    align-items: center;
+    margin: 0;
+  }
+  .arrow-row .layer-label { color: transparent; }
+  .arrow-row .layer-content {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0;
+  }
+  .arrow-down {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, #334155, #1e293b);
+    position: relative;
+    margin: 0 auto;
+  }
+  .arrow-down::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: -4px;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #334155;
+  }
+
+  /* ── BOX STYLES ── */
+  .box {
+    border-radius: 8px;
+    padding: 14px 18px;
+    border: 1px solid;
+    cursor: pointer;
+    transition: all 0.18s ease;
+    position: relative;
+  }
+  .box:hover { transform: translateY(-1px); filter: brightness(1.1); }
+  .box-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+  }
+  .box-desc {
+    font-size: 11px;
+    line-height: 1.5;
+    opacity: 0.75;
+  }
+  .box-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 8px;
+  }
+  .tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-weight: 500;
+    opacity: 0.85;
+  }
+
+  /* colour themes */
+  .theme-human {
+    background: #1e1b4b;
+    border-color: #4338ca;
+    color: #c7d2fe;
+  }
+  .theme-human .box-title { color: #a5b4fc; }
+  .theme-human .tag { background: #312e81; color: #a5b4fc; }
+
+  .theme-standard {
+    background: #0c2340;
+    border-color: #0369a1;
+    color: #bae6fd;
+  }
+  .theme-standard .box-title { color: #7dd3fc; }
+  .theme-standard .tag { background: #0c3054; color: #7dd3fc; }
+
+  .theme-cto {
+    background: #1a1a2e;
+    border-color: #7c3aed;
+    color: #ddd6fe;
+  }
+  .theme-cto .box-title { color: #c4b5fd; }
+  .theme-cto .tag { background: #2d1b69; color: #c4b5fd; }
+
+  .theme-state {
+    background: #0f2a1f;
+    border-color: #16a34a;
+    color: #bbf7d0;
+  }
+  .theme-state .box-title { color: #86efac; }
+  .theme-state .tag { background: #14532d; color: #86efac; }
+
+  .theme-github {
+    background: #1c1917;
+    border-color: #78716c;
+    color: #d6d3d1;
+  }
+  .theme-github .box-title { color: #e7e5e4; }
+  .theme-github .tag { background: #292524; color: #a8a29e; }
+
+  .theme-dev {
+    background: #1c1107;
+    border-color: #d97706;
+    color: #fde68a;
+  }
+  .theme-dev .box-title { color: #fcd34d; }
+  .theme-dev .tag { background: #451a03; color: #fcd34d; }
+
+  .theme-project {
+    background: #1a0a0a;
+    border-color: #dc2626;
+    color: #fecaca;
+  }
+  .theme-project .box-title { color: #fca5a5; }
+  .theme-project .tag { background: #450a0a; color: #fca5a5; }
+
+  /* ── ROW LAYOUTS ── */
+  .row-single .layer-content { display: flex; }
+  .row-single .layer-content .box { flex: 1; }
+
+  .row-multi .layer-content {
+    display: grid;
+    gap: 10px;
+  }
+  .cols-2 { grid-template-columns: 1fr 1fr; }
+  .cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  /* ── HANDOFF CONNECTOR ── */
+  .handoff-band {
+    margin: 0;
+    padding: 8px 0;
+  }
+  .handoff-band .layer-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .handoff-line {
+    flex: 1;
+    height: 2px;
+    background: repeating-linear-gradient(90deg, #334155 0px, #334155 6px, transparent 6px, transparent 12px);
+    position: relative;
+  }
+  .handoff-badge {
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    white-space: nowrap;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── DETAIL PANEL ── */
+  #detail-panel {
+    max-width: 960px;
+    margin: 32px auto 0;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 20px 24px;
+    display: none;
+  }
+  #detail-panel.visible { display: block; }
+  #detail-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin-bottom: 10px;
+  }
+  #detail-body {
+    font-size: 12px;
+    color: #94a3b8;
+    line-height: 1.7;
+  }
+  #detail-body ul { padding-left: 16px; }
+  #detail-body li { margin-bottom: 4px; }
+  #detail-body strong { color: #cbd5e1; }
+  .detail-close {
+    float: right;
+    cursor: pointer;
+    color: #475569;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+  }
+  .detail-close:hover { color: #94a3b8; background: #334155; }
+
+  /* ── LEGEND ── */
+  .legend {
+    max-width: 960px;
+    margin: 24px auto 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #64748b;
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    border: 1px solid;
+  }
+</style>
+</head>
+<body>
+
+<h1>Multi-Agent AI Dev Control System</h1>
+<p class="subtitle">Click any component for details</p>
+
+<div class="diagram">
+
+  <!-- LAYER 0: HUMAN -->
+  <div class="layer row-single">
+    <div class="layer-label">Human</div>
+    <div class="layer-content">
+      <div class="box theme-human" onclick="showDetail('human')">
+        <div class="box-title">Simon (Owner)</div>
+        <div class="box-desc">Decision gate — reviews human_loop items, approves escalations, sets direction. Not the data pipe.</div>
+        <div class="box-tags">
+          <span class="tag">Approves escalations</span>
+          <span class="tag">Sets scope</span>
+          <span class="tag">Resolves open questions</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="layer-label"></div><div class="layer-content"><div class="arrow-down"></div></div></div>
+
+  <!-- LAYER 1: STANDARD REPO -->
+  <div class="layer row-single">
+    <div class="layer-label">Standard</div>
+    <div class="layer-content">
+      <div class="box theme-standard" onclick="showDetail('standard')">
+        <div class="box-title">ai-dev-control (this repo) — github.com/reframe-risk/multi-agent</div>
+        <div class="box-desc">The canonical standard. Project-agnostic. Every CTO session reads this before touching a project repo.</div>
+        <div class="box-tags">
+          <span class="tag">/control — 5 governance docs</span>
+          <span class="tag">/schemas — YAML contracts</span>
+          <span class="tag">/templates — adapt per project</span>
+          <span class="tag">/projects — per-project state</span>
+          <span class="tag">/decisions — audit trail</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="layer-label"></div><div class="layer-content"><div class="arrow-down"></div></div></div>
+
+  <!-- LAYER 2: CTO SESSION + PROJECT STATE side by side -->
+  <div class="layer row-multi">
+    <div class="layer-label">CTO Layer</div>
+    <div class="layer-content cols-2">
+      <div class="box theme-cto" onclick="showDetail('cto')">
+        <div class="box-title">CTO Session</div>
+        <div class="box-desc">Reads standard + project state. Analyses, decides, authors YAML briefs. Never writes production code. Commits handoff artifact to close session.</div>
+        <div class="box-tags">
+          <span class="tag">Read-only ops autonomous</span>
+          <span class="tag">Proposals only</span>
+          <span class="tag">Escalates to human</span>
+        </div>
+      </div>
+      <div class="box theme-state" onclick="showDetail('projectstate')">
+        <div class="box-title">projects/reframe-app/</div>
+        <div class="box-desc">Project-specific state inside the standard repo. Persists across sessions. Updated by agent at session end.</div>
+        <div class="box-tags">
+          <span class="tag">current_state.yaml</span>
+          <span class="tag">README.md</span>
+          <span class="tag">handoffs/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HANDOFF BAND -->
+  <div class="layer handoff-band">
+    <div class="layer-label" style="font-size:9px; color:#334155">Handoff</div>
+    <div class="layer-content">
+      <div class="handoff-line"></div>
+      <div class="handoff-badge" onclick="showDetail('handoff')" style="cursor:pointer">HANDOFF_{FROM}_{TO}_{DC}.yaml ↓ committed to GitHub</div>
+      <div class="handoff-line"></div>
+    </div>
+  </div>
+
+  <!-- LAYER 3: GITHUB -->
+  <div class="layer row-single">
+    <div class="layer-label">Git State</div>
+    <div class="layer-content">
+      <div class="box theme-github" onclick="showDetail('github')">
+        <div class="box-title">GitHub — github.com/reframe-risk/reframe-app</div>
+        <div class="box-desc">Persistent state layer. Survives context resets, agent handoffs, session ends. The source of truth — not a destination for finished work.</div>
+        <div class="box-tags">
+          <span class="tag">Branches = work in progress</span>
+          <span class="tag">PRs = handoff gates</span>
+          <span class="tag">Issues = briefs</span>
+          <span class="tag">Actions = validation gates</span>
+          <span class="tag">Commit log = session history</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="layer-label"></div><div class="layer-content"><div class="arrow-down"></div></div></div>
+
+  <!-- LAYER 4: DEV SESSION -->
+  <div class="layer row-single">
+    <div class="layer-label">Dev Layer</div>
+    <div class="layer-content">
+      <div class="box theme-dev" onclick="showDetail('dev')">
+        <div class="box-title">Dev Session (Claude Code)</div>
+        <div class="box-desc">Reads YAML handoff at session start. Executes phases defined in the brief. Autonomous within pre-authorized scope. Commits handoff artifact at session end.</div>
+        <div class="box-tags">
+          <span class="tag">Reads handoff.yaml</span>
+          <span class="tag">Executes brief phases</span>
+          <span class="tag">Autonomous within authority</span>
+          <span class="tag">Checkpoints on escalation triggers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow-row"><div class="layer-label"></div><div class="layer-content"><div class="arrow-down"></div></div></div>
+
+  <!-- LAYER 5: PROJECT REPO -->
+  <div class="layer row-single">
+    <div class="layer-label">Project</div>
+    <div class="layer-content">
+      <div class="box theme-project" onclick="showDetail('project')">
+        <div class="box-title">reframe-app — docs/control/</div>
+        <div class="box-desc">Project-level control layer. Adapted from standard templates. Session lifecycle, governance rules, architectural invariants, wave tracker.</div>
+        <div class="box-tags">
+          <span class="tag">SESSION_HEADER.md</span>
+          <span class="tag">SESSION_BOOTSTRAP_STABLE.md</span>
+          <span class="tag">SESSION_BOOTSTRAP_CURRENT.md</span>
+          <span class="tag">WAVE3_TRACKER.md</span>
+          <span class="tag">docs/briefs/</span>
+          <span class="tag">docs/handoffs/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMS FORMAT ROW -->
+  <div style="max-width:960px; margin: 28px auto 0; padding: 0 0 0 120px;">
+    <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #475569; margin-bottom: 10px;">Communication format</div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div class="box theme-standard" style="cursor:default" onclick="showDetail('yaml')">
+        <div class="box-title">Structured YAML — agent-to-agent</div>
+        <div class="box-desc">Briefs, handoffs, current_state. Typed fields, required vs optional explicit. No interpretation required. Parsed, not read.</div>
+        <div class="box-tags">
+          <span class="tag">brief.schema.yaml</span>
+          <span class="tag">handoff.schema.yaml</span>
+          <span class="tag">current_state.yaml</span>
+        </div>
+      </div>
+      <div class="box theme-human" style="cursor:default" onclick="showDetail('prose')">
+        <div class="box-title">Markdown prose — human-readable</div>
+        <div class="box-desc">Governance rules, vision, role definitions, decisions, architectural rationale. Read for context, not for instruction.</div>
+        <div class="box-tags">
+          <span class="tag">SESSION_HEADER.md</span>
+          <span class="tag">VISION.md</span>
+          <span class="tag">decisions/</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- DETAIL PANEL -->
+<div id="detail-panel">
+  <span class="detail-close" onclick="closeDetail()">✕</span>
+  <div id="detail-title"></div>
+  <div id="detail-body"></div>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#1e1b4b;border-color:#4338ca"></div>Human layer</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0c2340;border-color:#0369a1"></div>Standard (ai-dev-control)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a1a2e;border-color:#7c3aed"></div>CTO session</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#0f2a1f;border-color:#16a34a"></div>Project state</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1c1917;border-color:#78716c"></div>GitHub</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1c1107;border-color:#d97706"></div>Dev session</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#1a0a0a;border-color:#dc2626"></div>Project /control</div>
+</div>
+
+<script>
+const details = {
+  human: {
+    title: "Human — Decision Gate",
+    body: `<ul>
+      <li><strong>Role:</strong> You review <code>human_loop.required_before_proceeding</code> and <code>open_questions[owner: HUMAN]</code> in handoff files. That's it.</li>
+      <li><strong>Old model:</strong> You were the data pipe — copying prompts from CTO session to Dev terminal and back.</li>
+      <li><strong>New model:</strong> Agents commit structured YAML files to GitHub. You review the <code>human_loop</code> fields (30 seconds) and approve or flag.</li>
+      <li><strong>You get pulled in when:</strong> risk is MEDIUM/HIGH, an open question has <code>owner: HUMAN</code>, or an escalation trigger fires.</li>
+      <li><strong>You don't get pulled in for:</strong> read-only diagnostics, drafting proposals, authoring briefs, running tests.</li>
+    </ul>`
+  },
+  standard: {
+    title: "ai-dev-control — The Standard Repo",
+    body: `<ul>
+      <li><strong>What it is:</strong> The project-agnostic reference. Every CTO session reads this before touching a project repo.</li>
+      <li><strong>/control:</strong> VISION, AGENT_ROLES, PROMPT_DISCIPLINE, AUTONOMOUS_EXECUTION, GITHUB_STANDARD — the 5 governance documents.</li>
+      <li><strong>/schemas:</strong> <code>brief.schema.yaml</code> and <code>handoff.schema.yaml</code> — the contracts between agents.</li>
+      <li><strong>/templates:</strong> SESSION_HEADER, BOOTSTRAP_STABLE, BOOTSTRAP_CURRENT, SESSION_START/END, BRIEF_TEMPLATE, HANDOFF_TEMPLATE — copy and adapt per project.</li>
+      <li><strong>/projects:</strong> One directory per project. Each has <code>current_state.yaml</code>, <code>README.md</code>, and <code>handoffs/</code>.</li>
+      <li><strong>/decisions:</strong> Audit trail of decisions that shaped the standard. 001 = bootstrap split, 002 = structured communication format.</li>
+      <li><strong>Rule:</strong> Projects are adapted toward the standard, not the other way around.</li>
+    </ul>`
+  },
+  cto: {
+    title: "CTO Session — Authority and Scope",
+    body: `<ul>
+      <li><strong>Autonomous (no pausing):</strong> Read-only shell commands, SELECT queries, reading any file, writing proposals and documents, updating WAVE tracker on completion.</li>
+      <li><strong>Checkpoint required:</strong> Writing production code, applying DB migrations, pushing to remote, merging PRs, any action affecting 2+ systems.</li>
+      <li><strong>Escalation triggers:</strong> MEDIUM/HIGH risk change, architectural invariant conflict, brief ambiguity, undocumented prior changes discovered.</li>
+      <li><strong>Session end:</strong> Must produce a <code>HANDOFF_CTO_DEV_{DC}_{DATE}.yaml</code> committed to <code>projects/reframe-app/handoffs/</code> before closing.</li>
+      <li><strong>Does NOT:</strong> Write production code, apply migrations, push to remote, re-open completed DCs.</li>
+    </ul>`
+  },
+  projectstate: {
+    title: "projects/reframe-app/ — Project State in the Standard Repo",
+    body: `<ul>
+      <li><strong>current_state.yaml:</strong> Pipeline metrics (LIT 81.2%, BHP regression), active DC (DC-W3-07d), open blockers (Turso token expires Mar 10), pending structural tasks.</li>
+      <li><strong>README.md:</strong> What the project is, adaptation notes, CTO session load order, what's already implemented vs what's pending.</li>
+      <li><strong>handoffs/:</strong> Committed YAML handoff artifacts — the structured replacement for text prompts.</li>
+      <li><strong>Updated:</strong> By the agent at session end. The git history of this file is the session log.</li>
+      <li><strong>Why it lives here:</strong> Any CTO session can read full project context without needing direct reframe-app repo access for orientation.</li>
+    </ul>`
+  },
+  handoff: {
+    title: "YAML Handoff — The Structured Communication Artifact",
+    body: `<ul>
+      <li><strong>What replaces:</strong> Free-text prompts pasted between sessions by the human.</li>
+      <li><strong>Key fields:</strong> <code>decisions[]</code> (with immutability flags), <code>current_state</code> (branch, DB status, sync status), <code>open_questions[]</code> (with owner), <code>do_not[]</code>, <code>autonomous_authority</code>, <code>human_loop</code>.</li>
+      <li><strong>human_loop.required_before_proceeding:</strong> The flag you check. If <code>false</code>, Dev proceeds autonomously. If <code>true</code>, you review <code>review_items</code> first.</li>
+      <li><strong>Filed at:</strong> <code>projects/reframe-app/handoffs/</code> in the standard repo AND <code>docs/handoffs/</code> in the project repo.</li>
+      <li><strong>Schema:</strong> <code>schemas/handoff.schema.yaml</code> — all fields typed, required vs optional explicit.</li>
+      <li><strong>Example:</strong> <code>examples/HANDOFF_CTO_DEV_DC-W3-07D_2026-03-05.yaml</code></li>
+    </ul>`
+  },
+  github: {
+    title: "GitHub — Persistent State Layer",
+    body: `<ul>
+      <li><strong>Core principle:</strong> GitHub survives context resets, agent handoffs, and session ends. It's the source of truth, not a destination for finished work.</li>
+      <li><strong>Branches:</strong> Work in progress always has a branch. Nothing important is only local.</li>
+      <li><strong>PRs:</strong> The handoff gate between agents. PR description includes System Impact Matrix (SIM), risk classification, verification results.</li>
+      <li><strong>Issues:</strong> The preferred home for engineering briefs when using GitHub for task tracking.</li>
+      <li><strong>Actions:</strong> Validation gates between phases — schema validation, SIM enforcement, test runs. (Decision 003 — coming next.)</li>
+      <li><strong>Commit log:</strong> Automatic session history — better than a manually updated markdown document.</li>
+    </ul>`
+  },
+  dev: {
+    title: "Dev Session — Execution Layer",
+    body: `<ul>
+      <li><strong>Starts by reading:</strong> The YAML handoff file committed by CTO. No text prompt from human.</li>
+      <li><strong>Autonomous by default:</strong> Read-only commands, run tests, apply migrations locally, commit to working branch, write to specified paths.</li>
+      <li><strong>Checkpoint required:</strong> Remote sync (Turso), pushing to main, merging PRs, modifying shared infrastructure, any action outside the brief.</li>
+      <li><strong>Uses <code>--dangerously-skip-permissions</code></strong> for tool-level permissions. Brief's <code>autonomous_authority</code> handles judgment-level pauses.</li>
+      <li><strong>Session end:</strong> Produces handoff artifact, updates <code>current_state.yaml</code>, updates WAVE tracker, commits.</li>
+      <li><strong>Parallel devs:</strong> Dev 1 (pipeline work) + Dev 2 (infrastructure) — parallel streams not yet formally defined in standard (noted in adaptation notes).</li>
+    </ul>`
+  },
+  project: {
+    title: "reframe-app — docs/control/",
+    body: `<ul>
+      <li><strong>Adapted from:</strong> ai-dev-control templates — not modified to fit, adapted toward the standard.</li>
+      <li><strong>SESSION_HEADER.md:</strong> Role definition, autonomous execution authority, 11 immutable governance rules, prohibited modifications.</li>
+      <li><strong>SESSION_BOOTSTRAP_STABLE.md:</strong> (pending) Anchor goal, completed waves, architectural invariants, what must not be re-opened.</li>
+      <li><strong>SESSION_BOOTSTRAP_CURRENT.md:</strong> (pending) Rolling 5-session window, current metrics, active DC, open blockers. Currently SESSION_BOOTSTRAP.md (55KB+ — bootstrap split is next task).</li>
+      <li><strong>WAVE3_TRACKER.md:</strong> Per-DC status, notes, outcomes. Richer than what the standard defines — kept as-is.</li>
+      <li><strong>docs/briefs/:</strong> YAML brief files (migration in progress — currently markdown).</li>
+      <li><strong>docs/handoffs/:</strong> Committed YAML handoff artifacts.</li>
+    </ul>`
+  },
+  yaml: {
+    title: "Structured YAML — Agent-to-Agent Communication",
+    body: `<ul>
+      <li><strong>Why not prose:</strong> When an agent reads prose it interprets it — interpretation is where variance enters. Two runs of the same prompt can produce different behaviour.</li>
+      <li><strong>Typed fields:</strong> Every field has a type (string, enum, boolean, list). Agents parse, not read.</li>
+      <li><strong>Required vs optional:</strong> Missing required fields = invalid artifact. No silent omissions.</li>
+      <li><strong>Schemas:</strong> <code>brief.schema.yaml</code> defines the brief contract. <code>handoff.schema.yaml</code> defines the handoff contract.</li>
+      <li><strong>Examples:</strong> Both schemas are populated with real DC-W3-07d data in <code>/examples</code>.</li>
+    </ul>`
+  },
+  prose: {
+    title: "Markdown Prose — Human-Readable Documents",
+    body: `<ul>
+      <li><strong>When appropriate:</strong> Governance rules, architectural rationale, vision, role definitions, decision records. Humans need to author and understand these.</li>
+      <li><strong>Read by agents for:</strong> Context, constraints, role boundaries — not for step-by-step instructions.</li>
+      <li><strong>SESSION_HEADER.md:</strong> The system prompt equivalent — loaded once at session start, treated as immutable for the session.</li>
+      <li><strong>decisions/:</strong> The audit trail of why the standard is the way it is. Prevents re-deriving settled questions.</li>
+      <li><strong>Rule:</strong> If an agent needs to act on the content → YAML. If a human needs to understand the content → prose.</li>
+    </ul>`
+  }
+};
+
+function showDetail(key) {
+  const d = details[key];
+  if (!d) return;
+  document.getElementById('detail-title').textContent = d.title;
+  document.getElementById('detail-body').innerHTML = d.body;
+  const panel = document.getElementById('detail-panel');
+  panel.classList.add('visible');
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('visible');
+}
+</script>
+</body>
+</html>

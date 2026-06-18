@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "_comment": "Pipeline Dev project-level settings. Place at .claude/settings.json in the project repo. Extends baseline settings.json. Allows pipeline phase scripts locally. Blocks remote sync and infrastructure files.",
+  "permissions": {
+    "defaultMode": "acceptEdits",
+    "allow": [
+      "Bash(python3 scripts/infrastructure/phase* *)",
+      "Bash(python3 scripts/core_modules/* *)",
+      "Bash(python3 scripts/adr013/* *)",
+      "Bash(pytest *)",
+      "Bash(python3 -m pytest *)",
+      "Bash(sqlite3 /tmp/* *)",
+      "Bash(python3 scripts/admin/measure_ground_truth.py *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git checkout *)"
+    ],
+    "ask": [
+      "Bash(./scripts/run_5_phase_pipeline.sh *)",
+      "Bash(python3 scripts/admin/apply_migrations.py *)",
+      "Bash(git push *)"
+    ],
+    "deny": [
+      "Bash(./scripts/admin/sync_turso_schema.sh)",
+      "Bash(turso db shell *)",
+      "Bash(turso db execute *)"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true
+  }
+}

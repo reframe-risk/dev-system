@@ -1,0 +1,146 @@
+# HANDOFF TEMPLATE — CTO to Dev Brief
+# Schema: schemas/handoff.schema.yaml v1.1
+# Copy this file, fill all fields, commit before session ends.
+# File naming: docs/handoffs/HANDOFF_CTO_DEV_{DC}_{DATE}.yaml
+#
+# DESIGN: The brief must be SELF-CONTAINED. The dev should not need to read
+# external docs to execute. Inline all context — architectural decisions,
+# current DB state, existing patterns — directly in this brief.
+
+schema_version: "1.1"
+date: YYYY-MM-DD
+from_role: CTO                  # CTO | DEV | PM | REVIEWER
+to_role: DEV                    # CTO | DEV | PM | REVIEWER | HUMAN
+dc_identifier: DC-XX-XXX        # or NONE
+task_id: "T-NNN"                # TASKS.yaml task ID this DC addresses
+
+# ─── SOURCE REFERENCES ────────────────────────────────────────────────────────
+# Links back to scope doc, end-state criteria, and governing contracts.
+# The CTO must re-read these before writing the brief (meta.brief_writing convention).
+
+source_refs:
+  - doc: "docs/control/SCOPE-NNN-[NAME].md"
+    section: "Phase B — [phase name]"
+    relevance: "This task advances end-state criterion C3"
+  # - doc: "docs/control/[CONTRACT].md"
+  #   section: "[section]"
+  #   relevance: "[how it governs this task]"
+
+session_summary: >
+  [One sentence — what this brief asks the dev to build.]
+
+# ─── CONTEXT (INLINED) ───────────────────────────────────────────────────────
+# Everything the dev needs to understand the current state. Do NOT write
+# "go read file X" — paste the relevant content here.
+
+context:
+  system_state: >
+    [Current DB metrics, schema version, key counts — whatever the dev needs
+    to verify their starting point matches expectations.]
+  prior_work: >
+    [What was built in prior DCs that this task builds on. Reference file paths
+    and patterns the dev should follow.]
+  architectural_decisions: >
+    [Relevant ADRs and invariants, inlined. Not "see ADR-022" but the actual
+    decision and its constraint on this task.]
+
+# ─── WHAT TO BUILD ────────────────────────────────────────────────────────────
+
+phases:
+  - id: 1
+    name: "[Phase name]"
+    task: >
+      [What to do — specific enough to execute without clarification.
+      Reference existing code by file path and line range.]
+    output:
+      type: FILE                 # FILE | QUERY_RESULT | MEASUREMENT | CODE_CHANGE
+      path: null
+      description: "[What the output contains.]"
+    validation_gate: >
+      [How to confirm this phase is correct before next phase starts.]
+
+decisions:
+  - description: >
+      [What was decided — one sentence.]
+    rationale: >
+      [Why — one sentence.]
+    immutable: false             # true = receiver must not re-open this
+
+# ─── SCOPE BOUNDARIES ────────────────────────────────────────────────────────
+
+autonomous_authority:
+  files_in_scope:
+    - "[repo-relative path — explicit file list the dev may modify]"
+  may_proceed:
+    - All read-only shell commands (grep, cat, ls, git log, git diff, --help flags)
+    - SELECT queries against local DB
+    - Reading any file in the repository
+    - Running test suites
+    - Writing code within files_in_scope
+    - "[Add brief-specific autonomous actions]"
+  must_checkpoint:
+    - Any remote sync or push
+    - Any database write or migration not specified in phases
+    - Any file modification outside files_in_scope
+    - "[Add brief-specific checkpoint triggers]"
+
+do_not:
+  - "[Most plausible wrong action for THIS specific task]"
+  - "[Second most plausible wrong action]"
+  - Do not modify files outside files_in_scope
+  - Do not expand scope beyond what is described in phases
+
+out_of_scope:
+  - "[What the dev might be tempted to add but should not]"
+
+# ─── TESTING ──────────────────────────────────────────────────────────────────
+# Tests are MANDATORY for feature and fix DCs (SESSION_HEADER.md governance rule).
+
+testing:
+  requirement: "Tests ship in same DC as code"
+  pattern: tdd                   # tdd | post-implementation | regression-only
+  coverage_gate: null            # minimum coverage % or null
+  test_location: "[where tests go — e.g. tests/]"
+  prior_art: null                # existing test file to follow as pattern
+  expected_test_count: null      # minimum tests the dev should produce
+
+# ─── SUCCESS CRITERIA ─────────────────────────────────────────────────────────
+
+success_criteria:
+  - id: SC-1
+    description: "[Measurable outcome — not 'it works' but 'endpoint returns 200 with shape X']"
+    measurable: true
+  - id: SC-2
+    description: "[Measurable outcome]"
+    measurable: true
+
+# ─── SELF-CHECK ───────────────────────────────────────────────────────────────
+# Commands the dev runs before producing the return handoff.
+
+self_check:
+  - item: "[Specific check]"
+    command: "[exact command to run]"
+    expected: "[expected output]"
+  - item: "Full test suite passes"
+    command: "[project test command]"
+    expected: "0 failures"
+  - item: "Return handoff produced"
+    command: "ls docs/handoffs/HANDOFF_DEV_CTO_${DC_ID}_*.yaml"
+    expected: "File exists with all fields filled"
+
+# ─── METADATA ─────────────────────────────────────────────────────────────────
+
+risk:
+  level: LOW                     # LOW | MEDIUM | HIGH
+  systems_affected: 0
+  rationale: "[One sentence.]"
+
+human_loop:
+  required_before_proceeding: false
+  review_items: []               # list items if required_before_proceeding: true
+
+# For bug fix DCs, include this section:
+# bug_context:
+#   symptom: "[what the user sees]"
+#   reproduction: "[steps or command to reproduce]"
+#   hypotheses: []               # CTO may pre-populate if diagnosis started

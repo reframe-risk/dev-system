@@ -1,0 +1,223 @@
+# ─── ILLUSTRATIVE EXAMPLE ────────────────────────────────────────────────────
+# This is a real engineering brief from the reframe-app project (DC-W3-07d).
+# It is included here to show how the schema is used in practice with real
+# project detail. The domain (compliance pipeline, Turso, BHP/LIT companies)
+# is specific to reframe-app — substitute your project's equivalents.
+# For the blank template, see: templates/BRIEF_TEMPLATE.yaml
+# ─────────────────────────────────────────────────────────────────────────────
+# Schema: schemas/brief.schema.yaml v1.0
+
+schema_version: "1.0"
+dc_identifier: DC-W3-07d
+title: BHP Productivity Recall Regression
+date: 2026-03-02
+workstream: WS-01 — Precision and Verifiability
+priority: P1
+owner: Simon Schwab
+prerequisite: DC-W3-07a
+risk_level: MEDIUM
+systems_affected: 3
+
+problem:
+  root_cause: >
+    Two prior changes combined to make productivity hypotheses unreachable for BHP:
+    (1) DC-W3-01g commented out productivity category universal default in
+    graph_helpers.py; (2) DC-W3-07a deleted 56 orphaned productivity spans seeds.
+    Result: productivity generates 0 hypotheses for BHP.
+  metrics:
+    - metric: BHP recall (pre-regression baseline)
+      value: "81.82%"
+      source: DC-W3-07a validation, 2026-03-01
+    - metric: BHP recall (current, post-regression)
+      value: "54.5%"
+      source: Pipeline re-measurement, 2026-03-02
+    - metric: BHP productivity hypotheses generated
+      value: "0"
+      source: Phase 2 output, 2026-03-02
+  rationale: >
+    The productivity category collapse is a side effect of correct fixes elsewhere.
+    The fix must restore BHP's productivity recall without reverting LIT's precision
+    improvement. The solution is universal trigger flags for mining-specific
+    obligations, not category inference restoration.
+
+autonomous_authority:
+  may_proceed:
+    - All read-only shell commands (grep, cat, ls, git log, git diff, --help flags)
+    - SELECT queries against local taxonomy DB
+    - Reading any file in the repository
+    - Running unit tests for is_trigger_met()
+    - Running Phase 2 inject step only for LIT spot check
+    - Writing to docs/handoffs/ and docs/changes/
+  must_checkpoint:
+    - Applying migration 059 to Turso (remote sync)
+    - Running full 5-phase pipeline for any company
+    - Modifying db_paths.py or graph_helpers.py
+    - Committing or opening a PR
+
+phases:
+  - id: 1
+    name: Review CTO-authored changes
+    task: >
+      Review all files modified by the prior CTO session (listed in handoff artifact).
+      For each file: assess whether the change is correct, whether virtiofs fallback
+      should be retained or removed, whether trigger handlers match between Phase 2
+      and Phase 4. Do not modify any file during review — produce a written assessment
+      only.
+    output:
+      type: DOCUMENT
+      path: docs/changes/CHANGE_REVIEW_DC_W3_07d.md
+      description: >
+        Assessment of each CTO-authored change. Accept / Modify / Revert decision
+        for each, with rationale. Virtiofs fallback decision explicitly stated.
+    validation_gate: >
+      Human reviews CHANGE_REVIEW doc and confirms virtiofs fallback decision before
+      Phase 2 begins. No code changes until human confirms.
+
+  - id: 2
+    name: Verify local taxonomy DB state
+    task: >
+      Run SELECT query to confirm migration 059 is correctly applied locally.
+      Expected: 26 rows where is_universal=1, including the 7 new mining triggers.
+      If count is wrong, do not proceed — surface to human.
+    output:
+      type: QUERY_RESULT
+      path: null
+      description: COUNT of is_universal=1 rows, list of new requirement_ids from migration 059
+    validation_gate: >
+      COUNT = 26 and all 7 new requirement_ids present before Phase 3.
+
+  - id: 3
+    name: Apply accepted changes and run BHP pipeline
+    task: >
+      Apply the changes accepted in Phase 1 review. Run full BHP pipeline (Phases 2–5).
+      Check that productivity hypotheses are generated and reach the final register.
+    output:
+      type: MEASUREMENT
+      path: null
+      description: >
+        BHP pipeline output: hypotheses.json (Phase 2), filtered register (Phase 5).
+        Precision, recall, RETAIN count.
+    validation_gate: >
+      navigation, maritime, export, export_reg all appear in hypotheses.json.
+      Phase 4 retains them via universal gate (not evidence gate).
+
+  - id: 4
+    name: LIT spot check
+    task: >
+      Run Phase 2 inject step only for LIT. Confirm no new false positives from
+      mining triggers (MARITIME_OPERATOR, MINING_EXPORTER, MINING_OPERATOR).
+    output:
+      type: MEASUREMENT
+      path: null
+      description: LIT Phase 2 hypotheses.json — check for unexpected mining-triggered additions
+    validation_gate: No new mining-triggered FPs in LIT hypotheses.json.
+
+do_not:
+  - Re-enable productivity category universal default in graph_helpers.py
+  - Add BHP-specific hardcoding — all fixes must generalise via trigger logic
+  - Apply new taxonomy migrations without running verification SELECT first
+  - Sync to Turso until local pipeline re-run confirms expected precision/recall
+  - Remove the maritime_safety → sovereignty_defence seed from migration 057
+  - Run full pipeline for companies other than BHP and LIT
+
+verification:
+  commands:
+    - step: 1
+      command: >
+        sqlite3 /tmp/taxonomy.db
+        "SELECT requirement_id, is_universal, universal_trigger
+         FROM compliance_requirements WHERE is_universal = 1 ORDER BY requirement_id"
+      purpose: Verify 26 universal obligations including migration 059 additions
+    - step: 2
+      command: ./scripts/run_5_phase_pipeline.sh --code BHP
+      purpose: Full BHP pipeline run after accepted changes applied
+    - step: 3
+      command: >
+        python3 scripts/admin/measure_ground_truth.py --code BHP
+        --ground-truth docs/audit/GROUND_TRUTH_BHP_LOCKED.md
+      purpose: Measure precision and recall against locked ground truth
+    - step: 4
+      command: python3 scripts/adr013/run_phase2_hypotheses.py --code LIT
+      purpose: LIT Phase 2 spot check for mining trigger false positives
+  expected_outcomes:
+    - Migration 059 shows 26 universal obligations in local DB
+    - BHP Phase 2 generates hypotheses for navigation, maritime, export, export_reg
+    - Phase 4 retains them via universal gate (filter_reason = "universal_obligation")
+    - BHP precision >= 10%, recall >= 70%
+    - LIT Phase 2 shows no new mining-triggered entries
+
+success_criteria:
+  - id: 1
+    description: act_navigation_act_2012 appears in BHP hypotheses.json
+    measurable: true
+  - id: 2
+    description: maritime_safety appears in BHP hypotheses.json
+    measurable: true
+  - id: 3
+    description: act_export_control_act_2020 appears in BHP hypotheses.json
+    measurable: true
+  - id: 4
+    description: act_export_controls_reg appears in BHP hypotheses.json
+    measurable: true
+  - id: 5
+    description: BHP precision >= 10%, recall >= 70%
+    measurable: true
+  - id: 6
+    description: LIT Phase 2 shows no new mining-triggered false positives
+    measurable: true
+
+self_check:
+  - item: 26 universal obligations confirmed in local taxonomy DB
+    verification_method: SELECT COUNT(*) WHERE is_universal=1
+  - item: Virtiofs fallback reviewed — decision documented and applied
+    verification_method: Read CHANGE_REVIEW doc, confirm decision matches code state
+  - item: All 5 trigger handlers in Phase 4 match Phase 2 exactly
+    verification_method: grep CHEMICAL_OPERATIONS, MARITIME_OPERATOR, MINING_EXPORTER, MINING_OPERATOR, FACILITY_OPERATOR in both files
+  - item: BHP pipeline run complete — navigation, maritime, export, export_reg in register
+    verification_method: grep requirement_ids in Phase 5 output
+  - item: LIT Phase 2 spot check complete — no new mining FPs
+    verification_method: Review LIT hypotheses.json for unexpected mining-triggered entries
+  - item: WAVE3_TRACKER updated with DC-W3-07d result
+    verification_method: Read WAVE3_TRACKER.md row for DC-W3-07d
+  - item: Turso sync run after local validation passes
+    verification_method: Confirm sync command completed without error
+
+change_impact:
+  systems:
+    - name: Phase 2 hypothesis generation
+      impact: IMPACTED
+      description: New trigger handlers added to is_trigger_met()
+    - name: Phase 4 evidence filter
+      impact: IMPACTED
+      description: Same trigger handlers must match Phase 2 exactly
+    - name: Taxonomy DB
+      impact: IMPACTED
+      description: Migration 059 adds is_universal=1 for 7 mining requirement_ids
+    - name: DB connection infrastructure
+      impact: INDIRECTLY_AFFECTED
+      description: Virtiofs fallback review may result in modification to db_paths.py / graph_helpers.py
+  regression_risk: >
+    Universal gate is additive for BHP (more items RETAIN, none excluded).
+    Risk is false positives for other companies from overly broad mining triggers.
+    LIT spot check (Phase 4) is the regression guard.
+
+out_of_scope:
+  - Adding taxonomy entries for act_australian_dangerous_goods_code and
+    act_criminal_code_ammonium — these remain FNs until taxonomy is extended
+  - BHP climate_environment and industrial_relations categories — separate re-run task
+  - Any company other than BHP (primary) and LIT (spot check)
+  - Phase 3 or Phase 5 modifications
+
+output_documents:
+  - description: Change review assessment (Phase 1 output)
+    path: docs/changes/CHANGE_REVIEW_DC_W3_07d.md
+  - description: Dev handoff artifact (if passing to another session)
+    path: docs/handoffs/HANDOFF_DEV_HUMAN_DC-W3-07D_{DATE}.yaml
+
+handoff:
+  produces_artifact: true
+  to_role: HUMAN
+  tracker_update:
+    file: docs/control/WAVE3_TRACKER.md
+    dc_identifier: DC-W3-07d
+    on_complete: COMPLETE

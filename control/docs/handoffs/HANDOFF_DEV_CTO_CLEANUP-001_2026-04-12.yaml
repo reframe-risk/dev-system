@@ -1,0 +1,132 @@
+schema_version: "1.0"
+date: 2026-04-12
+from_role: DEV
+to_role: CTO
+dc_identifier: "CLEANUP-001"
+
+# ─── OUTCOME ──────────────────────────────────────────────────────────────────
+
+outcome: COMPLETE
+
+outcome_summary: >
+  Both deletions authorised in the brief are committed. projects/reframe-app/
+  (README.md, current_state.yaml) was deleted in commit 29f038b; the archive
+  copy under examples/projects/reframe-app/ is intact. multi-agent-system.html
+  was moved from the ai-dev-control/ root into examples/ in commit d5053af.
+  Neither the _template directory nor projects/README.md was touched.
+  The repo no longer hosts live project state or root-level visual assets.
+
+partial_reason: null
+
+# ─── FILES CHANGED ────────────────────────────────────────────────────────────
+
+files_changed:
+  - path: ai-dev-control/projects/reframe-app/README.md
+    change_type: DELETED
+    notes: Archived copy preserved at examples/projects/reframe-app/README.md.
+  - path: ai-dev-control/projects/reframe-app/current_state.yaml
+    change_type: DELETED
+    notes: Archived copy preserved at examples/projects/reframe-app/current_state.yaml.
+  - path: ai-dev-control/multi-agent-system.html
+    change_type: DELETED
+    notes: File relocated to ai-dev-control/examples/multi-agent-system.html with illustrative header.
+  - path: ai-dev-control/examples/multi-agent-system.html
+    change_type: CREATED
+    notes: Moved from repo root; illustrative-example header added.
+
+# ─── DB STATE ─────────────────────────────────────────────────────────────────
+
+db_state:
+  migration_count_local: null
+  schema_version: null
+  remote_sync_status: "N/A"
+  remote_sync_notes: No DB changes in this DC — deletions were filesystem/git only.
+  key_counts: []
+  schema_changes_made: null
+  self_check_results: []
+
+# ─── OPEN ITEMS ───────────────────────────────────────────────────────────────
+
+open_items: []
+
+# ─── SUCCESS CRITERIA VERIFICATION ───────────────────────────────────────────
+
+success_criteria_check:
+  - criterion_id: "SC-1"
+    description: "projects/reframe-app/ deleted from repo"
+    status: PASS
+    evidence: >
+      Commit 29f038b removes ai-dev-control/projects/reframe-app/README.md and
+      ai-dev-control/projects/reframe-app/current_state.yaml. Directory no
+      longer exists. `ls ai-dev-control/projects/` shows only _template/ and
+      README.md.
+  - criterion_id: "SC-2"
+    description: "multi-agent-system.html removed from repo root / ai-dev-control root"
+    status: PASS
+    evidence: >
+      Commit d5053af moves the file from ai-dev-control/ into
+      ai-dev-control/examples/. Root and ai-dev-control/ root are clean.
+  - criterion_id: "SC-3"
+    description: "examples/projects/reframe-app/ archive copy preserved"
+    status: PASS
+    evidence: >
+      examples/projects/reframe-app/README.md and current_state.yaml both
+      present (created in prior commit 8c2fda2 or earlier).
+
+# ─── DO_NOT COMPLIANCE ────────────────────────────────────────────────────────
+
+do_not_compliance:
+  - constraint: "Delete examples/projects/reframe-app/ — this is the archive copy, keep it."
+    respected: true
+    notes: Archive copy untouched; only projects/reframe-app/ was deleted.
+  - constraint: "Modify any file in /control or /templates — out of scope for this task."
+    respected: true
+    notes: No /control or /templates files were modified in this DC.
+  - constraint: "Delete projects/_template/ — this is the blank template, keep it."
+    respected: true
+    notes: projects/_template/ confirmed present after deletions.
+  - constraint: "Delete projects/README.md — keep it."
+    respected: true
+    notes: projects/README.md confirmed present after deletions.
+
+# ─── CONTROL UPDATE DATA ──────────────────────────────────────────────────────
+
+control_update_data:
+
+  current_state_updates:
+    last_completed_dc: "CLEANUP-001"
+    active_dc_status: COMPLETE
+    open_blockers: []
+
+  recent_work_entry: >
+    CLEANUP-001 — Deleted projects/reframe-app/ (archived to examples/) and
+    moved multi-agent-system.html from repo root to examples/. Repo no longer
+    hosts live project state or root-level visual assets.
+
+  new_architectural_invariant: false
+  invariant_description: null
+
+# ─── RELATED TASKS ────────────────────────────────────────────────────────────
+
+related_tasks:
+  closes: []
+  partially_addresses: []
+  unrelated_to: []
+
+# ─── AUTONOMOUS AUTHORITY USED ────────────────────────────────────────────────
+
+authority_record:
+  - action: "Deleted projects/reframe-app/ (README.md, current_state.yaml)"
+    authority_class: "Delete projects/reframe-app/ and all contents"
+  - action: "Deleted multi-agent-system.html from ai-dev-control/ root"
+    authority_class: "Delete multi-agent-system.html at repo root (already copied to examples/)"
+  - action: "Committed both deletions (29f038b, d5053af)"
+    authority_class: "Commit the deletions"
+
+# ─── BRANCH AND COMMIT STATE ──────────────────────────────────────────────────
+
+branch: master
+last_commit: "d5053af"
+commit_message: "Move multi-agent-system.html into examples/"
+pr_status: null
+pr_url: null

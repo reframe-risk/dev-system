@@ -1,0 +1,185 @@
+# TASKS.yaml — Task Register
+# [PROJECT: replace with project name]
+#
+# PURPOSE: Single entry point for current project state. Read this first, every CTO session.
+# The meta block links every other governance document.
+# TASKS.yaml is authoritative for task status.
+# current_state.yaml is authoritative for DC completion status and DB metrics.
+# When they disagree, reconcile using CTO_REVIEW_PROCESS.md Step 7.
+#
+# UPDATED BY: CTO at session end (Steps 7a/7b of CTO_REVIEW_PROCESS.md)
+# DO NOT UPDATE: Dev sessions do not update this file directly.
+
+schema_version: "1.0"
+project: "[PROJECT: project name]"
+last_updated: "[DATE]"
+last_updated_by: CTO
+
+# ─── META — CROSS-REFERENCE BLOCK ─────────────────────────────────────────────
+# This block is the navigation hub. It tells any CTO session where everything is.
+
+meta:
+
+  # Join point fields — must stay consistent with current_state.yaml
+  last_closed_dc: null                        # e.g. "DC-S001-3-2" — updated when DC closes
+  pending_cto_review: null                    # DC-ID of dev return awaiting CTO review, or null
+
+  active_scope:
+    name: "[PROJECT: scope name]"             # e.g. "SCOPE-001-PRE-SCALE-REMEDIATION"
+    path: "docs/control/[SCOPE-DOC].md"
+    final_dc_pending: null                    # last DC needed to close this scope, or null
+    end_state_criteria:
+      # List the scope's end-state criteria and their status.
+      # Updated when a DC satisfies a criterion.
+      - id: C1
+        description: "[PROJECT: criterion description]"
+        status: PENDING                       # PENDING / MET
+      - id: C2
+        description: "[PROJECT: criterion description]"
+        status: PENDING
+
+  qa_inspection:
+    path: "docs/control/[QA_INSPECTION].md"  # e.g. QA_INSPECTION_2026-04-10.md
+    sign_off_complete: false
+    open_items_in_qa:
+      # Maps QA open items to task IDs in this register.
+      # Format: QA-open-item-ID → task ID
+      # e.g. "OI-001": "T-001"
+      # Add entries as QA items are discovered and tasked.
+
+    scope_candidates_from_qa:
+      # Next-scope candidates identified in the QA inspection.
+      # Format: candidate-ref: tracked (T-ID) / not yet tracked
+      # e.g. "C8-1": "T-014"
+
+  governance_docs:
+    # Paths to all governance documents. Keeps the CTO from hunting for files.
+    agent_roles: "docs/control/AGENT_ROLES.md"
+    cto_engineering_standards: "docs/control/CTO_ENGINEERING_STANDARDS.md"
+    cto_review_process: "docs/control/CTO_REVIEW_PROCESS.md"
+    working_process: "docs/control/WORKING_PROCESS.md"
+    control_directory: "docs/control/CONTROL_DIRECTORY.md"
+    session_start: "docs/control/SESSION_START_PROMPT.md"
+    session_end_dev: "docs/control/SESSION_END_PROMPT.md"
+    session_end_cto: "docs/control/SESSION_END_PROMPT_CTO.md"
+    session_header: "docs/control/SESSION_HEADER.md"
+    bootstrap_stable: "docs/control/SESSION_BOOTSTRAP_STABLE.md"
+    bootstrap_current: "docs/control/SESSION_BOOTSTRAP_CURRENT.md"
+    current_state: "docs/control/current_state.yaml"
+    handoffs_dir: "docs/handoffs/"
+
+# ─── CONVENTIONS ──────────────────────────────────────────────────────────────
+
+conventions:
+
+  # Brief-writing convention:
+  # Every brief MUST consult source_refs[] paths. Before drafting a brief:
+  # 1. Read the scope doc section referenced by the task
+  # 2. Re-read End-State Criteria for the task's phase
+  # 3. Cross-check dependencies (depends_on tasks must be DONE)
+  # 4. Brief must include source_refs pointing back to scope doc + section
+  brief_writing: >
+    Every task MUST have source_refs[] pointing to scope doc section.
+    Before drafting a brief: read scope doc, re-read End-State Criteria
+    for task's phase, cross-check depends_on, include source_refs in brief.
+
+  # Assignee convention:
+  # Controlled vocabulary for the owner field.
+  assignee_vocabulary:
+    cto: "CTO executes (governance work, specs, ADRs, briefs)"
+    dev: "Dev executes (implementation, code, tests)"
+    frontend: "Frontend dev executes (UI components, styling)"
+    cto_then_dev: "CTO authors spec/design, then dev implements"
+    human: "Requires human decision or action"
+
+  # Testing requirement:
+  # Tests are mandatory for feature and fix DCs (SESSION_HEADER.md governance rule).
+  testing_requirement: >
+    Tests required per assignee: dev and frontend must produce tests.
+    Tests ship in the same DC as code. Test pattern (tdd/post-implementation/
+    regression-only) specified per-brief in testing.pattern field.
+    Coverage gate: [PROJECT: threshold or 'project-specific'].
+
+# ─── OPEN TASKS ───────────────────────────────────────────────────────────────
+# Priority: P0 = blocking, P1 = high/immediate, P2 = important, P3 = future/architecture
+# Owner: cto | dev | frontend | cto_then_dev | human (see assignee_vocabulary above)
+# Status: OPEN / ACTIVE (in progress) / BLOCKED / PENDING_REVIEW
+
+tasks:
+
+  # P0 — Blocking
+  # Tasks that must be resolved before any other meaningful work can proceed.
+
+  # - id: T-001
+  #   priority: P0
+  #   title: "[description of blocking issue]"
+  #   owner: dev
+  #   status: OPEN
+  #   dc_id: null               # DC-ID when brief is written
+  #   blocks: "[what this blocks]"
+  #   depends_on: []             # T-IDs that must be DONE before this task can start
+  #   source_refs:
+  #     - doc: "docs/control/SCOPE-NNN-[NAME].md"
+  #       section: "Phase B — [name]"
+  #   category: "[scope-phase or domain area]"
+  #   notes: null
+
+  # P1 — High priority, immediate
+  # Active scope work, critical fixes, CTO review actions.
+
+  # - id: T-002
+  #   priority: P1
+  #   title: "[description]"
+  #   owner: cto
+  #   status: OPEN
+  #   dc_id: null
+  #   blocks: null
+  #   depends_on: []
+  #   source_refs:
+  #     - doc: "docs/control/SCOPE-NNN-[NAME].md"
+  #       section: "[section]"
+  #   category: null
+  #   notes: null
+
+  # P2 — Important
+  # Quality improvements, automation, process work that matters but doesn't block.
+
+  # P3 — Architecture / future
+  # Next-scope candidates, structural improvements, future phase work.
+  # Includes refactor tasks from /improve-codebase-architecture scans.
+
+# ─── TASK COUNTS ─────────────────────────────────────────────────────────────
+# Machine-readable summary. Updated by CTO at session end.
+# Used by orchestrator for HALT-009 (no eligible tasks).
+
+task_counts:
+  open_p0: 0
+  open_p1: 0
+  open_p2: 0
+  open_p3: 0
+  open_total: 0
+  done_total: 0
+
+# ─── DONE (RECENT) ──────────────────────────────────────────────────────────
+# Keep the last 10–15 closed tasks here for CTO context.
+# When this section exceeds ~15 entries, move older entries to archive/done_tasks.yaml.
+# Format: same as open tasks, plus date_closed and outcome.
+
+done:
+
+  # - id: T-000
+  #   priority: P1
+  #   title: "[description]"
+  #   owner: dev
+  #   status: DONE
+  #   dc_id: "DC-T000"
+  #   date_closed: "[DATE]"
+  #   outcome: "[one-line outcome]"
+  #   source_refs:
+  #     - doc: "docs/control/SCOPE-NNN-[NAME].md"
+  #       section: "[section]"
+
+# ─── ARCHIVE ─────────────────────────────────────────────────────────────────
+# Older done tasks are moved to control/archive/done_tasks.yaml to keep this
+# file lean. Git history preserves the full record. The archive file uses the
+# same schema as the done section above.
