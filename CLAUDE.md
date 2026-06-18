@@ -8,7 +8,7 @@ It is not a project. It has no application code. It is the reference system that
 every project's `docs/control/` directory is adapted from.
 
 **Owner:** Simon Schwab
-**Repo:** https://github.com/reframe-risk/multi-agent
+**Repo:** https://github.com/reframe-risk/dev-system
 
 ---
 
